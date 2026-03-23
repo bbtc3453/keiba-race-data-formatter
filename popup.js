@@ -167,7 +167,10 @@
   }
 
   function setupLicenseUI() {
-    btnBuyLink.href = STORE_URL;
+    btnBuyLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      chrome.tabs.create({ url: STORE_URL });
+    });
 
     btnShowLicense.addEventListener("click", () => {
       licenseFree.style.display = "none";
