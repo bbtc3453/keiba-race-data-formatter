@@ -32,6 +32,8 @@
   const previewBox = document.getElementById("previewBox");
   const previewMeta = document.getElementById("previewMeta");
   const formatBtns = document.querySelectorAll(".format-btn");
+  const aiTemplateSection = document.getElementById("aiTemplateSection");
+  const aiTemplateOptions = document.getElementById("aiTemplateOptions");
 
   // License DOM
   const licenseFree = document.getElementById("licenseFree");
@@ -275,6 +277,14 @@
         btn.classList.add("active");
         currentFormat = format;
 
+        // Show/hide AI template selector
+        if (format === "ai") {
+          renderAITemplates();
+          aiTemplateSection.style.display = "block";
+        } else {
+          aiTemplateSection.style.display = "none";
+        }
+
         // Re-format if data already extracted
         if (extractedData) {
           formattedOutput = formatData(extractedData, currentFormat);
@@ -282,6 +292,51 @@
         }
       });
     });
+  }
+
+  // --- AI Template Selector ---
+  function renderAITemplates() {
+    const isResult = extractedData ? !!extractedData.raceInfo?.isResult : false;
+    aiTemplateOptions.innerHTML = "";
+
+    for (const [key, tpl] of Object.entries(AI_TEMPLATES)) {
+      if (tpl.forResult !== isResult) continue;
+
+      const btn = document.createElement("button");
+      btn.className = "ai-tpl-btn" + (key === currentAITemplate ? " active" : "");
+      btn.dataset.template = key;
+
+      // Pro-only badge
+      if (!tpl.free) {
+        btn.innerHTML = `${tpl.label} <span class="pro-badge">PRO</span>`;
+        if (!isPro) btn.classList.add("ai-tpl-locked");
+      } else {
+        btn.textContent = tpl.label;
+      }
+
+      btn.addEventListener("click", () => {
+        // Pro-only check
+        if (!tpl.free && !isPro) {
+          licenseFree.style.display = "none";
+          licenseForm.style.display = "block";
+          licenseKeyInput.focus();
+          return;
+        }
+
+        // Select this template
+        aiTemplateOptions.querySelectorAll(".ai-tpl-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentAITemplate = key;
+
+        // Re-format if data already extracted
+        if (extractedData) {
+          formattedOutput = formatData(extractedData, currentFormat);
+          showPreview(formattedOutput);
+        }
+      });
+
+      aiTemplateOptions.appendChild(btn);
+    }
   }
 
   // --- Extract Button ---
@@ -394,6 +449,105 @@
   // Data Formatting
   // ============================================
 
+  // ============================================
+  // AI Prompt Templates
+  // ============================================
+
+  const AI_TEMPLATES = {
+    // --- 出馬表用テンプレート ---
+    general: {
+      label: "総合分析",
+      forResult: false,
+      free: true,
+      prompt: (ri) =>
+        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）の出馬表データです。\n` +
+        `このデータを分析し、以下の観点から予想してください：\n` +
+        `1. 各馬の能力評価（前走成績・クラス実績から）\n` +
+        `2. 展開予想（脚質・枠順から）\n` +
+        `3. 馬場適性\n` +
+        `4. 推奨買い目（単勝・複勝・馬連）\n\n`,
+    },
+    pace: {
+      label: "展開予想",
+      forResult: false,
+      free: false,
+      prompt: (ri) =>
+        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）の出馬表データです。\n` +
+        `展開予想に特化して分析してください：\n` +
+        `1. 各馬の脚質（逃げ・先行・差し・追込）を分類\n` +
+        `2. テンの速い馬（逃げ・先行馬）を特定し、ペースを予測（ハイペース/ミドル/スロー）\n` +
+        `3. 枠順の有利不利（内枠先行有利か、外枠差し有利か）\n` +
+        `4. 展開が向く馬と向かない馬を明確に分類\n` +
+        `5. 展開を踏まえた推奨馬を 3 頭ピックアップ\n\n`,
+    },
+    longshot: {
+      label: "穴馬発掘",
+      forResult: false,
+      free: false,
+      prompt: (ri) =>
+        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）の出馬表データです。\n` +
+        `穴馬発掘に特化して分析してください：\n` +
+        `1. 単勝オッズ 10 倍以上の馬の中から、実力とオッズに乖離がある馬を特定\n` +
+        `2. 人気薄でも好走できる根拠（コース適性、距離実績、騎手力、斤量恩恵など）を具体的に示す\n` +
+        `3. 人気馬の死角（過剰人気の根拠）があれば指摘\n` +
+        `4. 穴馬を軸にした馬券戦略（単勝・複勝・ワイドなど低リスク馬券）を提案\n\n`,
+    },
+    blood: {
+      label: "血統分析",
+      forResult: false,
+      free: false,
+      prompt: (ri) =>
+        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）の出馬表データです。\n` +
+        `血統分析に特化して予想してください：\n` +
+        `1. 各馬の父・母父から距離適性を評価（短距離型/中距離型/長距離型）\n` +
+        `2. 馬場適性を血統から推定（芝向き/ダート向き、重馬場適性）\n` +
+        `3. コース適性（${ri.track || ""}${ri.distance || ""}に合う血統パターン）\n` +
+        `4. 血統的に過小評価されている馬がいれば指摘\n` +
+        `5. 血統面から推奨する馬を 3 頭ピックアップ\n\n`,
+    },
+    bias: {
+      label: "馬場バイアス",
+      forResult: false,
+      free: false,
+      prompt: (ri) =>
+        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）の出馬表データです。\n` +
+        `馬場バイアスを考慮して分析してください：\n` +
+        `1. ${ri.track || ""}${ri.surface || ""}${ri.distance || ""}のコース形態（直線の長さ、コーナー数、坂の有無）\n` +
+        `2. 想定される馬場バイアス（内有利/外有利、前有利/差し有利）\n` +
+        `3. 各馬の枠順と脚質がバイアスに合うかを評価\n` +
+        `4. バイアスが向く馬と向かない馬を分類\n` +
+        `5. 馬場バイアスを最大限活かせる馬を 3 頭推奨\n\n`,
+    },
+    // --- レース結果用テンプレート ---
+    review: {
+      label: "レース回顧",
+      forResult: true,
+      free: true,
+      prompt: (ri) =>
+        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）のレース結果データです。\n` +
+        `このデータを分析し、以下の観点からレース回顧を行ってください：\n` +
+        `1. 勝ち馬の評価（ペース、展開利、能力評価）\n` +
+        `2. 各馬の次走への展望\n` +
+        `3. 上がり 3F と通過順からの脚質分析\n` +
+        `4. 次走で狙える馬のピックアップ\n\n`,
+    },
+    nextrun: {
+      label: "次走注目馬",
+      forResult: true,
+      free: false,
+      prompt: (ri) =>
+        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）のレース結果データです。\n` +
+        `次走で狙える馬の発掘に特化して分析してください：\n` +
+        `1. 不利や展開負けで実力を出し切れなかった馬を特定（通過順と上がり 3F に注目）\n` +
+        `2. 上がり 3F 上位なのに着順が悪い馬（差し届かず・出遅れなど）をリストアップ\n` +
+        `3. クラス昇級初戦で経験不足だった馬（次走同クラスで巻き返す可能性）\n` +
+        `4. 各注目馬について、次走で好走するための条件（距離・コース・馬場）を具体的に提示\n\n`,
+    },
+  };
+
+  // Current AI template selection
+  let currentAITemplate = "general";
+
   function formatData(data, format) {
     switch (format) {
       case "markdown":
@@ -411,6 +565,7 @@
   function formatMarkdown(data) {
     const ri = data.raceInfo || {};
     const isResult = !!ri.isResult;
+    const pro = isPro;
     let output = "";
 
     // Race header
@@ -421,60 +576,78 @@
     if (meta) output += `**${meta}**\n\n`;
 
     if (isResult) {
-      const headers = ["着順", "枠", "馬番", "馬名", "性齢", "斤量", "騎手", "タイム", "着差", "通過", "上がり", "単勝", "人気", "馬体重"];
+      // Free: 着順, 枠, 馬番, 馬名, 性齢, 斤量, 騎手, タイム, 単勝, 人気
+      // Pro adds: 着差, 通過, 上がり, 馬体重
+      const headers = pro
+        ? ["着順", "枠", "馬番", "馬名", "性齢", "斤量", "騎手", "タイム", "着差", "通過", "上がり", "単勝", "人気", "馬体重"]
+        : ["着順", "枠", "馬番", "馬名", "性齢", "斤量", "騎手", "タイム", "単勝", "人気"];
       const separator = headers.map(() => "---");
       output += `| ${headers.join(" | ")} |\n`;
       output += `| ${separator.join(" | ")} |\n`;
 
       for (const h of data.horses) {
-        const row = [
-          h.finishPosition || "",
-          h.bracketNumber || "",
-          h.horseNumber || "",
-          h.horseName || "",
-          h.sexAge || "",
-          h.weight || "",
-          h.jockey || "",
-          h.time || "",
-          h.margin || "",
-          h.passage || "",
-          h.lastThreeF || "",
-          h.odds || "",
-          h.popularity || "",
-          h.bodyWeight || "",
-        ];
+        const row = pro
+          ? [
+              h.finishPosition || "", h.bracketNumber || "", h.horseNumber || "",
+              h.horseName || "", h.sexAge || "", h.weight || "", h.jockey || "",
+              h.time || "", h.margin || "", h.passage || "", h.lastThreeF || "",
+              h.odds || "", h.popularity || "", h.bodyWeight || "",
+            ]
+          : [
+              h.finishPosition || "", h.bracketNumber || "", h.horseNumber || "",
+              h.horseName || "", h.sexAge || "", h.weight || "", h.jockey || "",
+              h.time || "", h.odds || "", h.popularity || "",
+            ];
         output += `| ${row.join(" | ")} |\n`;
       }
     } else {
-      const headers = ["枠", "馬番", "馬名", "性齢", "斤量", "騎手", "調教師", "馬体重", "単勝", "人気"];
+      // Free: 枠, 馬番, 馬名, 性齢, 斤量, 騎手, 単勝, 人気
+      // Pro adds: 調教師, 馬体重
+      const headers = pro
+        ? ["枠", "馬番", "馬名", "性齢", "斤量", "騎手", "調教師", "馬体重", "単勝", "人気"]
+        : ["枠", "馬番", "馬名", "性齢", "斤量", "騎手", "単勝", "人気"];
       const separator = headers.map(() => "---");
       output += `| ${headers.join(" | ")} |\n`;
       output += `| ${separator.join(" | ")} |\n`;
 
       for (const h of data.horses) {
-        const row = [
-          h.bracketNumber || "",
-          h.horseNumber || "",
-          h.horseName || "",
-          h.sexAge || "",
-          h.weight || "",
-          h.jockey || "",
-          h.trainer || "",
-          h.bodyWeight || "",
-          h.odds || "",
-          h.popularity || "",
-        ];
+        const row = pro
+          ? [
+              h.bracketNumber || "", h.horseNumber || "", h.horseName || "",
+              h.sexAge || "", h.weight || "", h.jockey || "", h.trainer || "",
+              h.bodyWeight || "", h.odds || "", h.popularity || "",
+            ]
+          : [
+              h.bracketNumber || "", h.horseNumber || "", h.horseName || "",
+              h.sexAge || "", h.weight || "", h.jockey || "",
+              h.odds || "", h.popularity || "",
+            ];
         output += `| ${row.join(" | ")} |\n`;
       }
     }
 
-    // Pedigree
-    if (data.horses.some((h) => h.sire || h.dam || h.damSire)) {
+    // Pedigree (Pro only)
+    if (pro && data.horses.some((h) => h.sire || h.dam || h.damSire)) {
       output += `\n### 血統\n\n`;
       output += `| 馬番 | 馬名 | 父 | 母 | 母父 |\n`;
       output += `| --- | --- | --- | --- | --- |\n`;
       for (const h of data.horses) {
         output += `| ${h.horseNumber || ""} | ${h.horseName || ""} | ${h.sire || "-"} | ${h.dam || "-"} | ${h.damSire || "-"} |\n`;
+      }
+    }
+
+    // Previous races (Pro only, JRA)
+    if (pro && data.horses.some((h) => h.prevRaces && h.prevRaces.length > 0)) {
+      output += `\n### 前走成績\n\n`;
+      output += `| 馬番 | 馬名 | 前走 | 2 走前 | 3 走前 | 4 走前 |\n`;
+      output += `| --- | --- | --- | --- | --- | --- |\n`;
+      for (const h of data.horses) {
+        const pr = h.prevRaces || [];
+        const cols = [h.horseNumber || "", h.horseName || ""];
+        for (let i = 0; i < 4; i++) {
+          cols.push(pr[i] ? `${pr[i].rank || ""}着 ${pr[i].raceName || ""}` : "-");
+        }
+        output += `| ${cols.join(" | ")} |\n`;
       }
     }
 
@@ -549,24 +722,13 @@
   function formatAI(data) {
     const ri = data.raceInfo || {};
     const isResult = !!ri.isResult;
-    let output = "";
+    const tpl = AI_TEMPLATES[currentAITemplate];
 
-    if (isResult) {
-      output += `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）のレース結果データです。\n`;
-      output += `このデータを分析し、以下の観点からレース回顧を行ってください：\n`;
-      output += `1. 勝ち馬の評価（ペース、展開利、能力評価）\n`;
-      output += `2. 各馬の次走への展望\n`;
-      output += `3. 上がり 3F と通過順からの脚質分析\n`;
-      output += `4. 次走で狙える馬のピックアップ\n\n`;
-    } else {
-      output += `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）の出馬表データです。\n`;
-      output += `このデータを分析し、以下の観点から予想してください：\n`;
-      output += `1. 各馬の能力評価（前走成績・クラス実績から）\n`;
-      output += `2. 展開予想（脚質・枠順から）\n`;
-      output += `3. 馬場適性\n`;
-      output += `4. 推奨買い目（単勝・複勝・馬連）\n\n`;
-    }
+    // Fallback if template doesn't match result/shutuba
+    const fallbackKey = isResult ? "review" : "general";
+    const activeTpl = (tpl && tpl.forResult === isResult) ? tpl : AI_TEMPLATES[fallbackKey];
 
+    let output = activeTpl.prompt(ri);
     output += formatMarkdown(data);
 
     return output;

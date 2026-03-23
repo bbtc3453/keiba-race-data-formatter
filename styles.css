@@ -363,6 +363,54 @@ body {
   display: none;
 }
 
+/* AI Template Selection */
+.ai-template-section {
+  margin-top: 8px;
+}
+
+.ai-template-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.ai-tpl-btn {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ai-tpl-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ai-tpl-btn.active {
+  background: rgba(233, 69, 96, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ai-tpl-btn.ai-tpl-locked {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.ai-tpl-btn.ai-tpl-locked:hover {
+  border-color: var(--pro-gold);
+  color: var(--pro-gold);
+}
+
+.ai-tpl-btn .pro-badge {
+  font-size: 8px;
+}
+
 /* License Section */
 .license-section {
   margin-top: 14px;

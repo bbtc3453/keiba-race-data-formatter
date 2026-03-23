@@ -48,7 +48,15 @@
       <div class="format-options">
         <button class="format-btn active" data-format="markdown">Markdown</button>
         <button class="format-btn pro-only" data-format="csv">CSV <span class="pro-badge">PRO</span></button>
-        <button class="format-btn pro-only" data-format="ai">AI 分析用 <span class="pro-badge">PRO</span></button>
+        <button class="format-btn" data-format="ai">AI 分析用</button>
+      </div>
+    </div>
+
+    <!-- AI Template Selection (shown when AI format is selected) -->
+    <div id="aiTemplateSection" class="ai-template-section" style="display:none;">
+      <div class="format-label">AI プロンプト</div>
+      <div id="aiTemplateOptions" class="ai-template-options">
+        <!-- Dynamically populated -->
       </div>
     </div>
 
