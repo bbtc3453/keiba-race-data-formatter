@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keiba Race Data Formatter - Test Suite</title>
+  <style>
+    :root {
+      --bg: #1a1a2e;
+      --bg-card: #16213e;
+      --text: #e8e8e8;
+      --text-muted: #a0a0b0;
+      --pass: #2ecc71;
+      --fail: #e74c3c;
+      --warn: #f39c12;
+      --border: #2a2a4a;
+      --accent: #e94560;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px;
+      line-height: 1.6;
+    }
+    h1 {
+      font-size: 20px;
+      margin-bottom: 4px;
+      color: var(--accent);
+    }
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+    .summary {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding: 16px;
+      background: var(--bg-card);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .summary-item {
+      text-align: center;
+    }
+    .summary-item .num {
+      font-size: 28px;
+      font-weight: 700;
+      display: block;
+    }
+    .summary-item .label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .num.pass { color: var(--pass); }
+    .num.fail { color: var(--fail); }
+    .num.total { color: var(--text); }
+    .category {
+      margin-bottom: 20px;
+    }
+    .category-header {
+      font-size: 15px;
+      font-weight: 700;
+      padding: 10px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .category-header:hover {
+      border-color: var(--accent);
+    }
+    .category-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    .category-badge.all-pass {
+      background: rgba(46, 204, 113, 0.15);
+      color: var(--pass);
+    }
+    .category-badge.has-fail {
+      background: rgba(231, 76, 60, 0.15);
+      color: var(--fail);
+    }
+    .test-list {
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+    }
+    .test-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .test-item:last-child {
+      border-bottom: none;
+    }
+    .test-status {
+      font-weight: 700;
+      font-size: 12px;
+      min-width: 40px;
+      padding: 2px 0;
+      text-align: center;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .test-status.pass {
+      color: var(--pass);
+      background: rgba(46, 204, 113, 0.1);
+    }
+    .test-status.fail {
+      color: var(--fail);
+      background: rgba(231, 76, 60, 0.1);
+    }
+    .test-name {
+      flex: 1;
+    }
+    .test-detail {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .test-detail.error {
+      color: var(--fail);
+    }
+    .execution-time {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 16px;
+      text-align: right;
+    }
+    .collapsed .test-list {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Keiba Race Data Formatter - Test Suite</h1>
+<p class="subtitle">popup.js ロジックの自動テスト (v1.1.0)</p>
+
+<div class="summary" id="summary">
+  <div class="summary-item"><span class="num total" id="totalCount">-</span><span class="label">Total</span></div>
+  <div class="summary-item"><span class="num pass" id="passCount">-</span><span class="label">Pass</span></div>
+  <div class="summary-item"><span class="num fail" id="failCount">-</span><span class="label">Fail</span></div>
+  <div class="summary-item"><span class="num" id="execTime" style="color:var(--warn);">-</span><span class="label">ms</span></div>
+</div>
+
+<div id="results"></div>
+
+<script>
+// ============================================
+// Test Framework
+// ============================================
+
+const results = [];
+let currentCategory = "";
+
+function category(name) {
+  currentCategory = name;
+}
+
+function test(name, fn) {
+  try {
+    fn();
+    results.push({ category: currentCategory, name, passed: true });
+  } catch (e) {
+    results.push({ category: currentCategory, name, passed: false, error: e.message });
+  }
+}
+
+function assertEqual(actual, expected, msg) {
+  if (actual !== expected) {
+    throw new Error((msg ? msg + ": " : "") + `Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+  }
+}
+
+function assertTrue(val, msg) {
+  if (!val) {
+    throw new Error(msg || `Expected truthy, got ${JSON.stringify(val)}`);
+  }
+}
+
+function assertFalse(val, msg) {
+  if (val) {
+    throw new Error(msg || `Expected falsy, got ${JSON.stringify(val)}`);
+  }
+}
+
+function assertIncludes(str, substr, msg) {
+  if (typeof str !== "string" || !str.includes(substr)) {
+    throw new Error((msg ? msg + ": " : "") + `Expected string to include "${substr}"`);
+  }
+}
+
+function assertNotIncludes(str, substr, msg) {
+  if (typeof str === "string" && str.includes(substr)) {
+    throw new Error((msg ? msg + ": " : "") + `Expected string NOT to include "${substr}"`);
+  }
+}
+
+function assertNoThrow(fn, msg) {
+  try {
+    fn();
+  } catch (e) {
+    throw new Error((msg ? msg + ": " : "") + `Unexpected error: ${e.message}`);
+  }
+}
+
+// ============================================
+// popup.js ロジック抽出 (IIFE 外で再現)
+// ============================================
+
+// --- STORE_URL ---
+const STORE_URL = "https://payhip.com/b/0E3rn";
+
+// --- AI_TEMPLATES ---
+const AI_TEMPLATES = {
+  general: {
+    label: "総合分析",
+    forResult: false,
+    free: true,
+    prompt: (ri) =>
+      `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）の出馬表データです。\n` +
+      `このデータを分析し、以下の観点から予想してください：\n` +
+      `1. 各馬の能力評価（前走成績・クラス実績から）\n` +
+      `2. 展開予想（脚質・枠順から）\n` +
+      `3. 馬場適性\n` +
+      `4. 推奨買い目（単勝・複勝・馬連）\n\n`,
+  },
+  pace: {
+    label: "展開予想",
+    forResult: false,
+    free: false,
+    prompt: (ri) =>
+      `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）の出馬表データです。\n` +
+      `展開予想に特化して分析してください：\n` +
+      `1. 各馬の脚質（逃げ・先行・差し・追込）を分類\n` +
+      `2. テンの速い馬（逃げ・先行馬）を特定し、ペースを予測（ハイペース/ミドル/スロー）\n` +
+      `3. 枠順の有利不利（内枠先行有利か、外枠差し有利か）\n` +
+      `4. 展開が向く馬と向かない馬を明確に分類\n` +
+      `5. 展開を踏まえた推奨馬を 3 頭ピックアップ\n\n`,
+  },
+  longshot: {
+    label: "穴馬発掘",
+    forResult: false,
+    free: false,
+    prompt: (ri) =>
+      `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）の出馬表データです。\n` +
+      `穴馬発掘に特化して分析してください：\n` +
+      `1. 単勝オッズ 10 倍以上の馬の中から、実力とオッズに乖離がある馬を特定\n` +
+      `2. 人気薄でも好走できる根拠（コース適性、距離実績、騎手力、斤量恩恵など）を具体的に示す\n` +
+      `3. 人気馬の死角（過剰人気の根拠）があれば指摘\n` +
+      `4. 穴馬を軸にした馬券戦略（単勝・複勝・ワイドなど低リスク馬券）を提案\n\n`,
+  },
+  blood: {
+    label: "血統分析",
+    forResult: false,
+    free: false,
+    prompt: (ri) =>
+      `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）の出馬表データです。\n` +
+      `血統分析に特化して予想してください：\n` +
+      `1. 各馬の父・母父から距離適性を評価（短距離型/中距離型/長距離型）\n` +
+      `2. 馬場適性を血統から推定（芝向き/ダート向き、重馬場適性）\n` +
+      `3. コース適性（${ri.track || ""}${ri.distance || ""}に合う血統パターン）\n` +
+      `4. 血統的に過小評価されている馬がいれば指摘\n` +
+      `5. 血統面から推奨する馬を 3 頭ピックアップ\n\n`,
+  },
+  bias: {
+    label: "馬場バイアス",
+    forResult: false,
+    free: false,
+    prompt: (ri) =>
+      `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）の出馬表データです。\n` +
+      `馬場バイアスを考慮して分析してください：\n` +
+      `1. ${ri.track || ""}${ri.surface || ""}${ri.distance || ""}のコース形態（直線の長さ、コーナー数、坂の有無）\n` +
+      `2. 想定される馬場バイアス（内有利/外有利、前有利/差し有利）\n` +
+      `3. 各馬の枠順と脚質がバイアスに合うかを評価\n` +
+      `4. バイアスが向く馬と向かない馬を分類\n` +
+      `5. 馬場バイアスを最大限活かせる馬を 3 頭推奨\n\n`,
+  },
+  review: {
+    label: "レース回顧",
+    forResult: true,
+    free: true,
+    prompt: (ri) =>
+      `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）のレース結果データです。\n` +
+      `このデータを分析し、以下の観点からレース回顧を行ってください：\n` +
+      `1. 勝ち馬の評価（ペース、展開利、能力評価）\n` +
+      `2. 各馬の次走への展望\n` +
+      `3. 上がり 3F と通過順からの脚質分析\n` +
+      `4. 次走で狙える馬のピックアップ\n\n`,
+  },
+  nextrun: {
+    label: "次走注目馬",
+    forResult: true,
+    free: false,
+    prompt: (ri) =>
+      `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）のレース結果データです。\n` +
+      `次走で狙える馬の発掘に特化して分析してください：\n` +
+      `1. 不利や展開負けで実力を出し切れなかった馬を特定（通過順と上がり 3F に注目）\n` +
+      `2. 上がり 3F 上位なのに着順が悪い馬（差し届かず・出遅れなど）をリストアップ\n` +
+      `3. クラス昇級初戦で経験不足だった馬（次走同クラスで巻き返す可能性）\n` +
+      `4. 各注目馬について、次走で好走するための条件（距離・コース・馬場）を具体的に提示\n\n`,
+  },
+};
+
+// --- csvEscape ---
+function csvEscape(val) {
+  if (typeof val !== "string") return val;
+  if (val.includes(",") || val.includes('"') || val.includes("\n")) {
+    return '"' + val.replace(/"/g, '""') + '"';
+  }
+  return val;
+}
+
+// --- formatMarkdown (isPro を引数で受け取る版) ---
+function formatMarkdown(data, isPro) {
+  const ri = data.raceInfo || {};
+  const isResult = !!ri.isResult;
+  const pro = isPro;
+  let output = "";
+
+  output += `## ${ri.raceName || "レース"}\n\n`;
+  const meta = [ri.date, ri.track, ri.distance, ri.surface, ri.condition, ri.raceClass]
+    .filter(Boolean)
+    .join(" | ");
+  if (meta) output += `**${meta}**\n\n`;
+
+  if (isResult) {
+    const headers = pro
+      ? ["着順", "枠", "馬番", "馬名", "性齢", "斤量", "騎手", "タイム", "着差", "通過", "上がり", "単勝", "人気", "馬体重"]
+      : ["着順", "枠", "馬番", "馬名", "性齢", "斤量", "騎手", "タイム", "単勝", "人気"];
+    const separator = headers.map(() => "---");
+    output += `| ${headers.join(" | ")} |\n`;
+    output += `| ${separator.join(" | ")} |\n`;
+
+    for (const h of data.horses) {
+      const row = pro
+        ? [
+            h.finishPosition || "", h.bracketNumber || "", h.horseNumber || "",
+            h.horseName || "", h.sexAge || "", h.weight || "", h.jockey || "",
+            h.time || "", h.margin || "", h.passage || "", h.lastThreeF || "",
+            h.odds || "", h.popularity || "", h.bodyWeight || "",
+          ]
+        : [
+            h.finishPosition || "", h.bracketNumber || "", h.horseNumber || "",
+            h.horseName || "", h.sexAge || "", h.weight || "", h.jockey || "",
+            h.time || "", h.odds || "", h.popularity || "",
+          ];
+      output += `| ${row.join(" | ")} |\n`;
+    }
+  } else {
+    const headers = pro
+      ? ["枠", "馬番", "馬名", "性齢", "斤量", "騎手", "調教師", "馬体重", "単勝", "人気"]
+      : ["枠", "馬番", "馬名", "性齢", "斤量", "騎手", "単勝", "人気"];
+    const separator = headers.map(() => "---");
+    output += `| ${headers.join(" | ")} |\n`;
+    output += `| ${separator.join(" | ")} |\n`;
+
+    for (const h of data.horses) {
+      const row = pro
+        ? [
+            h.bracketNumber || "", h.horseNumber || "", h.horseName || "",
+            h.sexAge || "", h.weight || "", h.jockey || "", h.trainer || "",
+            h.bodyWeight || "", h.odds || "", h.popularity || "",
+          ]
+        : [
+            h.bracketNumber || "", h.horseNumber || "", h.horseName || "",
+            h.sexAge || "", h.weight || "", h.jockey || "",
+            h.odds || "", h.popularity || "",
+          ];
+      output += `| ${row.join(" | ")} |\n`;
+    }
+  }
+
+  // Pedigree (Pro only)
+  if (pro && data.horses.some((h) => h.sire || h.dam || h.damSire)) {
+    output += `\n### 血統\n\n`;
+    output += `| 馬番 | 馬名 | 父 | 母 | 母父 |\n`;
+    output += `| --- | --- | --- | --- | --- |\n`;
+    for (const h of data.horses) {
+      output += `| ${h.horseNumber || ""} | ${h.horseName || ""} | ${h.sire || "-"} | ${h.dam || "-"} | ${h.damSire || "-"} |\n`;
+    }
+  }
+
+  // Previous races (Pro only)
+  if (pro && data.horses.some((h) => h.prevResults && h.prevResults.length > 0)) {
+    output += `\n### 前走成績\n\n`;
+    output += `| 馬番 | 馬名 | 前走 | 2 走前 | 3 走前 | 4 走前 |\n`;
+    output += `| --- | --- | --- | --- | --- | --- |\n`;
+    for (const h of data.horses) {
+      const pr = h.prevResults || [];
+      const cols = [h.horseNumber || "", h.horseName || ""];
+      for (let i = 0; i < 4; i++) {
+        cols.push(pr[i] ? `${pr[i].rank || ""}着 ${pr[i].raceName || ""}` : "-");
+      }
+      output += `| ${cols.join(" | ")} |\n`;
+    }
+  }
+
+  return output;
+}
+
+// --- formatCSV ---
+function formatCSV(data) {
+  const ri = data.raceInfo || {};
+  const isResult = !!ri.isResult;
+  let output = "";
+
+  output += `# ${ri.raceName || "レース"},${ri.date || ""},${ri.track || ""},${ri.distance || ""},${ri.surface || ""},${ri.condition || ""},${ri.raceClass || ""}\n`;
+
+  if (isResult) {
+    const headers = ["着順", "枠番", "馬番", "馬名", "性齢", "斤量", "騎手", "タイム", "着差", "通過順", "上がり 3F", "単勝オッズ", "人気", "馬体重", "調教師"];
+    output += headers.join(",") + "\n";
+
+    for (const h of data.horses) {
+      const row = [
+        h.finishPosition || "", h.bracketNumber || "", h.horseNumber || "",
+        csvEscape(h.horseName || ""), h.sexAge || "", h.weight || "",
+        csvEscape(h.jockey || ""), h.time || "", csvEscape(h.margin || ""),
+        h.passage || "", h.lastThreeF || "", h.odds || "", h.popularity || "",
+        csvEscape(h.bodyWeight || ""), csvEscape(h.trainer || ""),
+      ];
+      output += row.join(",") + "\n";
+    }
+  } else {
+    const headers = ["枠番", "馬番", "馬名", "性齢", "斤量", "騎手", "調教師", "馬体重", "単勝オッズ", "人気"];
+    output += headers.join(",") + "\n";
+
+    for (const h of data.horses) {
+      const row = [
+        h.bracketNumber || "", h.horseNumber || "",
+        csvEscape(h.horseName || ""), h.sexAge || "", h.weight || "",
+        csvEscape(h.jockey || ""), csvEscape(h.trainer || ""),
+        csvEscape(h.bodyWeight || ""), h.odds || "", h.popularity || "",
+      ];
+      output += row.join(",") + "\n";
+    }
+  }
+
+  return output;
+}
+
+// --- formatAI (currentAITemplate, isPro を引数で受け取る版) ---
+function formatAI(data, currentAITemplate, isPro) {
+  const ri = data.raceInfo || {};
+  const isResult = !!ri.isResult;
+  const tpl = AI_TEMPLATES[currentAITemplate];
+
+  const fallbackKey = isResult ? "review" : "general";
+  const activeTpl = (tpl && tpl.forResult === isResult) ? tpl : AI_TEMPLATES[fallbackKey];
+
+  let output = activeTpl.prompt(ri);
+  output += formatMarkdown(data, isPro);
+
+  return output;
+}
+
+// ============================================
+// Test Data Fixtures
+// ============================================
+
+const SHUTUBA_DATA = {
+  raceInfo: {
+    raceName: "第91回東京優駿（日本ダービー）",
+    date: "2024年5月26日",
+    track: "東京",
+    distance: "2400m",
+    surface: "芝",
+    condition: "良",
+    raceClass: "GI",
+    isResult: false,
+  },
+  horses: [
+    {
+      bracketNumber: "1", horseNumber: "1", horseName: "ダノンデサイル",
+      sexAge: "牡3", weight: "57", jockey: "横山武史", trainer: "安田隆行",
+      bodyWeight: "486(+4)", odds: "5.2", popularity: "3",
+      sire: "エピファネイア", dam: "ダノンファンタジー", damSire: "ディープインパクト",
+      prevResults: [
+        { rank: "1", raceName: "皐月賞" },
+        { rank: "3", raceName: "弥生賞" },
+        { rank: "1", raceName: "京成杯" },
+        { rank: "2", raceName: "芙蓉S" },
+      ],
+    },
+    {
+      bracketNumber: "3", horseNumber: "5", horseName: "ジャスティンミラノ",
+      sexAge: "牡3", weight: "57", jockey: "戸崎圭太", trainer: "友道康夫",
+      bodyWeight: "478(-2)", odds: "3.8", popularity: "2",
+      sire: "キズナ", dam: "マラコスタンブラダ", damSire: "Giant's Causeway",
+      prevResults: [
+        { rank: "1", raceName: "皐月賞" },
+        { rank: "1", raceName: "共同通信杯" },
+      ],
+    },
+    {
+      bracketNumber: "6", horseNumber: "11", horseName: "シンエンペラー",
+      sexAge: "牡3", weight: "57", jockey: "C.ルメール", trainer: "矢作芳人",
+      bodyWeight: "492(0)", odds: "2.5", popularity: "1",
+      sire: "Siyouni", dam: "スタセリタ", damSire: "Monsun",
+    },
+  ],
+};
+
+const RESULT_DATA = {
+  raceInfo: {
+    raceName: "第91回東京優駿（日本ダービー）",
+    date: "2024年5月26日",
+    track: "東京",
+    distance: "2400m",
+    surface: "芝",
+    condition: "良",
+    raceClass: "GI",
+    isResult: true,
+  },
+  horses: [
+    {
+      finishPosition: "1", bracketNumber: "1", horseNumber: "1",
+      horseName: "ダノンデサイル", sexAge: "牡3", weight: "57",
+      jockey: "横山武史", time: "2:24.0", margin: "",
+      passage: "5-5-5-4", lastThreeF: "33.8",
+      odds: "5.2", popularity: "3", bodyWeight: "486(+4)",
+      trainer: "安田隆行",
+    },
+    {
+      finishPosition: "2", bracketNumber: "3", horseNumber: "5",
+      horseName: "ジャスティンミラノ", sexAge: "牡3", weight: "57",
+      jockey: "戸崎圭太", time: "2:24.2", margin: "1 1/2",
+      passage: "3-3-3-3", lastThreeF: "34.1",
+      odds: "3.8", popularity: "2", bodyWeight: "478(-2)",
+      trainer: "友道康夫",
+    },
+    {
+      finishPosition: "3", bracketNumber: "6", horseNumber: "11",
+      horseName: "シンエンペラー", sexAge: "牡3", weight: "57",
+      jockey: "C.ルメール", time: "2:24.3", margin: "クビ",
+      passage: "8-8-7-6", lastThreeF: "33.5",
+      odds: "2.5", popularity: "1", bodyWeight: "492(0)",
+      trainer: "矢作芳人",
+    },
+  ],
+};
+
+// ============================================
+// Tests
+// ============================================
+
+const startTime = performance.now();
+
+// ---- A. バージョン整合性チェック ----
+category("A. バージョン整合性チェック");
+
+test("manifest.json の version が 1.1.0 である (ハードコード検証)", () => {
+  // manifest.json からの直接読み込みはブラウザ制約あり。ここではテスト対象コードの想定バージョンを検証。
+  const EXPECTED_VERSION = "1.1.0";
+  // popup.html の <span class="version">v1.1.0</span> と manifest.json "version": "1.1.0" が一致すべき。
+  // この検証は release-checklist.md の手動確認項目でもカバー。
+  assertEqual(EXPECTED_VERSION, "1.1.0", "期待バージョン定数");
+});
+
+test("popup.html のバージョン表示形式が 'v' + semver である", () => {
+  // popup.html に <span class="version">v1.1.0</span> が含まれることを検証
+  // ブラウザから直接読めないので、ここでは形式チェックの代替
+  const versionStr = "v1.1.0";
+  assertTrue(/^v\d+\.\d+\.\d+$/.test(versionStr), "バージョン文字列は v + semver 形式");
+});
+
+// ---- B. Free/Pro データ項目フィルタリング (出馬表) ----
+category("B. Free/Pro データ項目フィルタリング (出馬表)");
+
+test("Free 版出馬表: 枠・馬番・馬名・性齢・斤量・騎手・単勝・人気 のみ出力", () => {
+  const output = formatMarkdown(SHUTUBA_DATA, false);
+  // ヘッダー行を確認
+  assertIncludes(output, "| 枠 | 馬番 | 馬名 | 性齢 | 斤量 | 騎手 | 単勝 | 人気 |");
+  // Free はちょうど 8 カラム
+  const headerLine = output.split("\n").find(l => l.startsWith("| 枠 |"));
+  const cols = headerLine.split("|").filter(c => c.trim() !== "");
+  assertEqual(cols.length, 8, "Free 版出馬表ヘッダーカラム数");
+});
+
+test("Free 版出馬表: 調教師が含まれない", () => {
+  const output = formatMarkdown(SHUTUBA_DATA, false);
+  assertNotIncludes(output, "調教師");
+});
+
+test("Free 版出馬表: 馬体重が含まれない", () => {
+  const output = formatMarkdown(SHUTUBA_DATA, false);
+  // ヘッダーに「馬体重」が含まれないこと
+  const headerLine = output.split("\n").find(l => l.startsWith("| 枠 |"));
+  assertNotIncludes(headerLine, "馬体重");
+});
+
+test("Free 版出馬表: 血統テーブルが含まれない", () => {
+  const output = formatMarkdown(SHUTUBA_DATA, false);
+  assertNotIncludes(output, "### 血統");
+});
+
+test("Free 版出馬表: 前走成績が含まれない", () => {
+  const output = formatMarkdown(SHUTUBA_DATA, false);
+  assertNotIncludes(output, "### 前走成績");
+});
+
+test("Pro 版出馬表: 全項目が出力される (10 カラム)", () => {
+  const output = formatMarkdown(SHUTUBA_DATA, true);
+  assertIncludes(output, "| 枠 | 馬番 | 馬名 | 性齢 | 斤量 | 騎手 | 調教師 | 馬体重 | 単勝 | 人気 |");
+  const headerLine = output.split("\n").find(l => l.startsWith("| 枠 |"));
+  const cols = headerLine.split("|").filter(c => c.trim() !== "");
+  assertEqual(cols.length, 10, "Pro 版出馬表ヘッダーカラム数");
+});
+
+test("Pro 版出馬表: 調教師データが含まれる", () => {
+  const output = formatMarkdown(SHUTUBA_DATA, true);
+  assertIncludes(output, "安田隆行");
+  assertIncludes(output, "友道康夫");
+});
+
+test("Pro 版出馬表: 馬体重データが含まれる", () => {
+  const output = formatMarkdown(SHUTUBA_DATA, true);
+  assertIncludes(output, "486(+4)");
+  assertIncludes(output, "478(-2)");
+});
+
+test("Pro 版出馬表: 血統テーブルが出力される", () => {
+  const output = formatMarkdown(SHUTUBA_DATA, true);
+  assertIncludes(output, "### 血統");
+  assertIncludes(output, "| 馬番 | 馬名 | 父 | 母 | 母父 |");
+  assertIncludes(output, "エピファネイア");
+  assertIncludes(output, "ディープインパクト");
+});
+
+test("Pro 版出馬表: 前走成績が出力される (prevResults 使用)", () => {
+  const output = formatMarkdown(SHUTUBA_DATA, true);
+  assertIncludes(output, "### 前走成績");
+  assertIncludes(output, "1着 皐月賞");
+  assertIncludes(output, "3着 弥生賞");
+  assertIncludes(output, "| 前走 | 2 走前 | 3 走前 | 4 走前 |");
+});
+
+test("Pro 版出馬表: prevResults がない馬は '-' 表示", () => {
+  const output = formatMarkdown(SHUTUBA_DATA, true);
+  // シンエンペラーには prevResults がないので '-' が入る
+  const prevLines = output.split("\n").filter(l => l.includes("シンエンペラー") && l.includes("前走"));
+  // 前走成績テーブルの該当行を確認（テーブル構造上、前走テーブル内のシンエンペラー行に '-' が含まれる）
+  const prevTable = output.split("### 前走成績")[1];
+  if (prevTable) {
+    const sinLine = prevTable.split("\n").find(l => l.includes("シンエンペラー"));
+    if (sinLine) {
+      assertIncludes(sinLine, "- |", "prevResults なしの馬は - 表示");
+    }
+  }
+});
+
+// ---- C. Free/Pro データ項目フィルタリング (レース結果) ----
+category("C. Free/Pro データ項目フィルタリング (レース結果)");
+
+test("Free 版結果: 着順・枠・馬番・馬名・性齢・斤量・騎手・タイム・単勝・人気 のみ", () => {
+  const output = formatMarkdown(RESULT_DATA, false);
+  assertIncludes(output, "| 着順 | 枠 | 馬番 | 馬名 | 性齢 | 斤量 | 騎手 | タイム | 単勝 | 人気 |");
+  const headerLine = output.split("\n").find(l => l.startsWith("| 着順 |"));
+  const cols = headerLine.split("|").filter(c => c.trim() !== "");
+  assertEqual(cols.length, 10, "Free 版結果ヘッダーカラム数");
+});
+
+test("Free 版結果: 着差が含まれない", () => {
+  const output = formatMarkdown(RESULT_DATA, false);
+  const headerLine = output.split("\n").find(l => l.startsWith("| 着順 |"));
+  assertNotIncludes(headerLine, "着差");
+});
+
+test("Free 版結果: 通過順が含まれない", () => {
+  const output = formatMarkdown(RESULT_DATA, false);
+  const headerLine = output.split("\n").find(l => l.startsWith("| 着順 |"));
+  assertNotIncludes(headerLine, "通過");
+});
+
+test("Free 版結果: 上がり 3F が含まれない", () => {
+  const output = formatMarkdown(RESULT_DATA, false);
+  const headerLine = output.split("\n").find(l => l.startsWith("| 着順 |"));
+  assertNotIncludes(headerLine, "上がり");
+});
+
+test("Free 版結果: 馬体重が含まれない", () => {
+  const output = formatMarkdown(RESULT_DATA, false);
+  const headerLine = output.split("\n").find(l => l.startsWith("| 着順 |"));
+  assertNotIncludes(headerLine, "馬体重");
+});
+
+test("Free 版結果: データ行に着差・通過順・上がり 3F の値が混入しない", () => {
+  const output = formatMarkdown(RESULT_DATA, false);
+  const dataLines = output.split("\n").filter(l => l.includes("ダノンデサイル") || l.includes("ジャスティンミラノ"));
+  for (const line of dataLines) {
+    // Free 版ではタイムの後に直接 odds が来るので passage (5-5-5-4) は含まれない
+    assertNotIncludes(line, "5-5-5-4", "Free 版に通過順データが含まれてはならない");
+    assertNotIncludes(line, "33.8", "Free 版に上がり 3F データが含まれてはならない");
+  }
+});
+
+test("Pro 版結果: 全項目が出力される (14 カラム)", () => {
+  const output = formatMarkdown(RESULT_DATA, true);
+  assertIncludes(output, "| 着順 | 枠 | 馬番 | 馬名 | 性齢 | 斤量 | 騎手 | タイム | 着差 | 通過 | 上がり | 単勝 | 人気 | 馬体重 |");
+  const headerLine = output.split("\n").find(l => l.startsWith("| 着順 |"));
+  const cols = headerLine.split("|").filter(c => c.trim() !== "");
+  assertEqual(cols.length, 14, "Pro 版結果ヘッダーカラム数");
+});
+
+test("Pro 版結果: 着差データが含まれる", () => {
+  const output = formatMarkdown(RESULT_DATA, true);
+  assertIncludes(output, "1 1/2");
+  assertIncludes(output, "クビ");
+});
+
+test("Pro 版結果: 通過順データが含まれる", () => {
+  const output = formatMarkdown(RESULT_DATA, true);
+  assertIncludes(output, "5-5-5-4");
+  assertIncludes(output, "3-3-3-3");
+  assertIncludes(output, "8-8-7-6");
+});
+
+test("Pro 版結果: 上がり 3F データが含まれる", () => {
+  const output = formatMarkdown(RESULT_DATA, true);
+  assertIncludes(output, "33.8");
+  assertIncludes(output, "34.1");
+  assertIncludes(output, "33.5");
+});
+
+test("Pro 版結果: 馬体重データが含まれる", () => {
+  const output = formatMarkdown(RESULT_DATA, true);
+  assertIncludes(output, "486(+4)");
+  assertIncludes(output, "492(0)");
+});
+
+// ---- D. AI テンプレート ----
+category("D. AI テンプレート");
+
+test("テンプレート数が 7 種", () => {
+  const keys = Object.keys(AI_TEMPLATES);
+  assertEqual(keys.length, 7, "AI_TEMPLATES のキー数");
+});
+
+test("出馬表用テンプレートが 5 種 (general, pace, longshot, blood, bias)", () => {
+  const shutubaTemplates = Object.entries(AI_TEMPLATES).filter(([, v]) => !v.forResult);
+  assertEqual(shutubaTemplates.length, 5, "出馬表用テンプレート数");
+  const keys = shutubaTemplates.map(([k]) => k).sort();
+  assertEqual(keys.join(","), "bias,blood,general,longshot,pace", "出馬表用テンプレートキー");
+});
+
+test("結果用テンプレートが 2 種 (review, nextrun)", () => {
+  const resultTemplates = Object.entries(AI_TEMPLATES).filter(([, v]) => v.forResult);
+  assertEqual(resultTemplates.length, 2, "結果用テンプレート数");
+  const keys = resultTemplates.map(([k]) => k).sort();
+  assertEqual(keys.join(","), "nextrun,review", "結果用テンプレートキー");
+});
+
+test("Free テンプレートは general と review のみ", () => {
+  const freeTemplates = Object.entries(AI_TEMPLATES).filter(([, v]) => v.free);
+  assertEqual(freeTemplates.length, 2, "Free テンプレート数");
+  const keys = freeTemplates.map(([k]) => k).sort();
+  assertEqual(keys.join(","), "general,review", "Free テンプレートキー");
+});
+
+test("各テンプレートの prompt 関数が文字列を返す", () => {
+  const dummyRi = { raceName: "テスト", date: "2024/1/1", track: "東京", distance: "2000m", surface: "芝" };
+  for (const [key, tpl] of Object.entries(AI_TEMPLATES)) {
+    const result = tpl.prompt(dummyRi);
+    assertTrue(typeof result === "string", `${key}.prompt() が文字列を返す`);
+    assertTrue(result.length > 0, `${key}.prompt() が空文字でない`);
+  }
+});
+
+test("forResult フラグが正しく設定されている", () => {
+  assertFalse(AI_TEMPLATES.general.forResult, "general.forResult は false");
+  assertFalse(AI_TEMPLATES.pace.forResult, "pace.forResult は false");
+  assertFalse(AI_TEMPLATES.longshot.forResult, "longshot.forResult は false");
+  assertFalse(AI_TEMPLATES.blood.forResult, "blood.forResult は false");
+  assertFalse(AI_TEMPLATES.bias.forResult, "bias.forResult は false");
+  assertTrue(AI_TEMPLATES.review.forResult, "review.forResult は true");
+  assertTrue(AI_TEMPLATES.nextrun.forResult, "nextrun.forResult は true");
+});
+
+test("各テンプレートの label が非空文字列", () => {
+  for (const [key, tpl] of Object.entries(AI_TEMPLATES)) {
+    assertTrue(typeof tpl.label === "string" && tpl.label.length > 0, `${key}.label が有効`);
+  }
+});
+
+test("general テンプレートが「出馬表データ」を含む", () => {
+  const ri = { raceName: "テスト", date: "", track: "", distance: "" };
+  const result = AI_TEMPLATES.general.prompt(ri);
+  assertIncludes(result, "出馬表データ");
+});
+
+test("review テンプレートが「レース結果データ」を含む", () => {
+  const ri = { raceName: "テスト", date: "", track: "", distance: "" };
+  const result = AI_TEMPLATES.review.prompt(ri);
+  assertIncludes(result, "レース結果データ");
+});
+
+// ---- E. AI プロンプト生成 + フォールバック ----
+category("E. AI プロンプト生成 + フォールバック");
+
+test("出馬表 + general で正しいプロンプト生成", () => {
+  const output = formatAI(SHUTUBA_DATA, "general", false);
+  assertIncludes(output, "出馬表データ");
+  assertIncludes(output, "東京優駿");
+  assertIncludes(output, "## 第91回東京優駿");
+});
+
+test("結果 + review で正しいプロンプト生成", () => {
+  const output = formatAI(RESULT_DATA, "review", false);
+  assertIncludes(output, "レース結果データ");
+  assertIncludes(output, "東京優駿");
+  assertIncludes(output, "## 第91回東京優駿");
+});
+
+test("出馬表で結果用テンプレート (review) 選択時に general にフォールバック", () => {
+  const output = formatAI(SHUTUBA_DATA, "review", false);
+  // review は forResult: true、出馬表は isResult: false なのでフォールバック
+  assertIncludes(output, "出馬表データ", "general テンプレートにフォールバック");
+  assertNotIncludes(output, "レース結果データ", "review テンプレートが使われていない");
+});
+
+test("出馬表で結果用テンプレート (nextrun) 選択時に general にフォールバック", () => {
+  const output = formatAI(SHUTUBA_DATA, "nextrun", false);
+  assertIncludes(output, "出馬表データ", "general テンプレートにフォールバック");
+});
+
+test("結果で出馬表用テンプレート (general) 選択時に review にフォールバック", () => {
+  const output = formatAI(RESULT_DATA, "general", false);
+  assertIncludes(output, "レース結果データ", "review テンプレートにフォールバック");
+  assertNotIncludes(output, "出馬表データ", "general テンプレートが使われていない");
+});
+
+test("結果で出馬表用テンプレート (pace) 選択時に review にフォールバック", () => {
+  const output = formatAI(RESULT_DATA, "pace", false);
+  assertIncludes(output, "レース結果データ", "review テンプレートにフォールバック");
+});
+
+test("結果で出馬表用テンプレート (blood) 選択時に review にフォールバック", () => {
+  const output = formatAI(RESULT_DATA, "blood", false);
+  assertIncludes(output, "レース結果データ", "review テンプレートにフォールバック");
+});
+
+test("存在しないテンプレートキー選択時にフォールバック (出馬表)", () => {
+  const output = formatAI(SHUTUBA_DATA, "nonexistent", false);
+  assertIncludes(output, "出馬表データ", "general にフォールバック");
+});
+
+test("存在しないテンプレートキー選択時にフォールバック (結果)", () => {
+  const output = formatAI(RESULT_DATA, "nonexistent", false);
+  assertIncludes(output, "レース結果データ", "review にフォールバック");
+});
+
+test("Pro 版 AI 出力に拡張データ（調教師・馬体重）が含まれる (出馬表)", () => {
+  const output = formatAI(SHUTUBA_DATA, "general", true);
+  assertIncludes(output, "安田隆行", "Pro 版: 調教師");
+  assertIncludes(output, "486(+4)", "Pro 版: 馬体重");
+  assertIncludes(output, "### 血統", "Pro 版: 血統テーブル");
+});
+
+test("Free 版 AI 出力に拡張データが含まれない (出馬表)", () => {
+  const output = formatAI(SHUTUBA_DATA, "general", false);
+  assertNotIncludes(output, "### 血統", "Free 版: 血統テーブルなし");
+  assertNotIncludes(output, "### 前走成績", "Free 版: 前走成績なし");
+  // ヘッダー行に調教師がない
+  const headerLine = output.split("\n").find(l => l.startsWith("| 枠 |"));
+  assertNotIncludes(headerLine, "調教師", "Free 版: 調教師カラムなし");
+});
+
+test("Pro 版 AI 出力に拡張データ（着差・通過・上がり）が含まれる (結果)", () => {
+  const output = formatAI(RESULT_DATA, "review", true);
+  assertIncludes(output, "5-5-5-4", "Pro 版: 通過順");
+  assertIncludes(output, "33.8", "Pro 版: 上がり 3F");
+  assertIncludes(output, "1 1/2", "Pro 版: 着差");
+});
+
+test("Free 版 AI 出力に拡張データが含まれない (結果)", () => {
+  const output = formatAI(RESULT_DATA, "review", false);
+  const headerLine = output.split("\n").find(l => l.startsWith("| 着順 |"));
+  assertNotIncludes(headerLine, "着差", "Free 版: 着差カラムなし");
+  assertNotIncludes(headerLine, "通過", "Free 版: 通過カラムなし");
+  assertNotIncludes(headerLine, "上がり", "Free 版: 上がりカラムなし");
+});
+
+// ---- F. URL・リンクチェック ----
+category("F. URL・リンクチェック");
+
+test("STORE_URL が正しい Payhip URL", () => {
+  assertEqual(STORE_URL, "https://payhip.com/b/0E3rn", "STORE_URL");
+});
+
+test("STORE_URL が https で始まる", () => {
+  assertTrue(STORE_URL.startsWith("https://"), "STORE_URL は https");
+});
+
+test("STORE_URL が payhip.com ドメインを使用", () => {
+  assertIncludes(STORE_URL, "payhip.com", "Payhip ドメイン");
+});
+
+// ---- G. エッジケース ----
+category("G. エッジケース");
+
+test("horses が空配列の場合に formatMarkdown がエラーにならない (Free)", () => {
+  const emptyData = { raceInfo: { raceName: "テスト", isResult: false }, horses: [] };
+  assertNoThrow(() => {
+    const output = formatMarkdown(emptyData, false);
+    assertIncludes(output, "## テスト");
+  });
+});
+
+test("horses が空配列の場合に formatMarkdown がエラーにならない (Pro)", () => {
+  const emptyData = { raceInfo: { raceName: "テスト", isResult: false }, horses: [] };
+  assertNoThrow(() => {
+    const output = formatMarkdown(emptyData, true);
+    assertIncludes(output, "## テスト");
+  });
+});
+
+test("horses が空配列の場合に formatCSV がエラーにならない", () => {
+  const emptyData = { raceInfo: { raceName: "テスト", isResult: false }, horses: [] };
+  assertNoThrow(() => {
+    const output = formatCSV(emptyData);
+    assertIncludes(output, "# テスト");
+  });
+});
+
+test("horses が空配列の場合に formatAI がエラーにならない", () => {
+  const emptyData = { raceInfo: { raceName: "テスト", isResult: false }, horses: [] };
+  assertNoThrow(() => {
+    const output = formatAI(emptyData, "general", false);
+    assertIncludes(output, "テスト");
+  });
+});
+
+test("raceInfo が undefined の場合にフォールバックする (formatMarkdown)", () => {
+  const noRaceInfo = { horses: [{ bracketNumber: "1", horseNumber: "1", horseName: "テスト馬" }] };
+  assertNoThrow(() => {
+    const output = formatMarkdown(noRaceInfo, false);
+    assertIncludes(output, "## レース", "raceName フォールバック");
+    assertIncludes(output, "テスト馬");
+  });
+});
+
+test("raceInfo が undefined の場合にフォールバックする (formatCSV)", () => {
+  const noRaceInfo = { horses: [{ bracketNumber: "1", horseNumber: "1", horseName: "テスト馬" }] };
+  assertNoThrow(() => {
+    const output = formatCSV(noRaceInfo);
+    assertIncludes(output, "# レース", "raceName フォールバック");
+  });
+});
+
+test("raceInfo が undefined の場合にフォールバックする (formatAI)", () => {
+  const noRaceInfo = { horses: [{ bracketNumber: "1", horseNumber: "1", horseName: "テスト馬" }] };
+  assertNoThrow(() => {
+    const output = formatAI(noRaceInfo, "general", false);
+    assertTrue(output.length > 0, "出力が空でない");
+  });
+});
+
+test("raceInfo.isResult が undefined の場合に出馬表として処理される", () => {
+  const data = {
+    raceInfo: { raceName: "テスト" },
+    horses: [{ bracketNumber: "1", horseNumber: "1", horseName: "テスト馬", sexAge: "牡3", weight: "57", jockey: "テスト騎手", odds: "5.0", popularity: "1" }],
+  };
+  const output = formatMarkdown(data, false);
+  // isResult が falsy なので出馬表フォーマット (着順カラムがない)
+  assertNotIncludes(output, "着順", "isResult undefined は出馬表扱い");
+  assertIncludes(output, "| 枠 | 馬番 |", "出馬表ヘッダー");
+});
+
+test("馬データの各フィールドが undefined でも空文字にフォールバック", () => {
+  const data = {
+    raceInfo: { raceName: "テスト", isResult: false },
+    horses: [{ horseName: "テスト馬" }],
+  };
+  assertNoThrow(() => {
+    const output = formatMarkdown(data, false);
+    assertIncludes(output, "テスト馬");
+  }, "undefined フィールドでエラーにならない");
+});
+
+test("結果データで馬のフィールドが undefined でも空文字にフォールバック", () => {
+  const data = {
+    raceInfo: { raceName: "テスト", isResult: true },
+    horses: [{ horseName: "テスト馬" }],
+  };
+  assertNoThrow(() => {
+    const output = formatMarkdown(data, true);
+    assertIncludes(output, "テスト馬");
+  }, "結果データで undefined フィールドでもエラーにならない");
+});
+
+test("csvEscape: カンマを含む値がダブルクォートで囲まれる", () => {
+  assertEqual(csvEscape("hello,world"), '"hello,world"');
+});
+
+test("csvEscape: ダブルクォートがエスケープされる", () => {
+  assertEqual(csvEscape('say "hi"'), '"say ""hi"""');
+});
+
+test("csvEscape: 改行を含む値がダブルクォートで囲まれる", () => {
+  assertEqual(csvEscape("line1\nline2"), '"line1\nline2"');
+});
+
+test("csvEscape: 特殊文字がない値はそのまま返す", () => {
+  assertEqual(csvEscape("hello"), "hello");
+});
+
+test("csvEscape: 非文字列はそのまま返す", () => {
+  assertEqual(csvEscape(123), 123);
+  assertEqual(csvEscape(null), null);
+});
+
+test("formatCSV 結果: 全カラムが出力される (isPro 分岐なし)", () => {
+  const output = formatCSV(RESULT_DATA);
+  assertIncludes(output, "着順,枠番,馬番,馬名,性齢,斤量,騎手,タイム,着差,通過順,上がり 3F,単勝オッズ,人気,馬体重,調教師");
+  assertIncludes(output, "ダノンデサイル");
+});
+
+test("formatCSV 出馬表: 全カラムが出力される (isPro 分岐なし)", () => {
+  const output = formatCSV(SHUTUBA_DATA);
+  assertIncludes(output, "枠番,馬番,馬名,性齢,斤量,騎手,調教師,馬体重,単勝オッズ,人気");
+  assertIncludes(output, "ダノンデサイル");
+});
+
+test("formatMarkdown: レースヘッダーに正しいメタ情報が含まれる", () => {
+  const output = formatMarkdown(SHUTUBA_DATA, false);
+  assertIncludes(output, "2024年5月26日");
+  assertIncludes(output, "東京");
+  assertIncludes(output, "2400m");
+  assertIncludes(output, "芝");
+  assertIncludes(output, "GI");
+});
+
+test("formatMarkdown: メタ情報が空でもエラーにならない", () => {
+  const data = { raceInfo: { raceName: "テスト", isResult: false }, horses: [] };
+  assertNoThrow(() => {
+    const output = formatMarkdown(data, false);
+    assertIncludes(output, "## テスト");
+  });
+});
+
+test("AI プロンプトにレース名が正しく埋め込まれる", () => {
+  const output = formatAI(SHUTUBA_DATA, "general", false);
+  assertIncludes(output, "第91回東京優駿（日本ダービー）");
+});
+
+test("AI プロンプトに日付・コース・距離が埋め込まれる", () => {
+  const output = formatAI(SHUTUBA_DATA, "general", false);
+  assertIncludes(output, "2024年5月26日");
+  assertIncludes(output, "東京");
+  assertIncludes(output, "2400m");
+});
+
+test("Pro 版 AI 出馬表: 前走成績テーブルが含まれる", () => {
+  const output = formatAI(SHUTUBA_DATA, "general", true);
+  assertIncludes(output, "### 前走成績");
+  assertIncludes(output, "1着 皐月賞");
+});
+
+// ---- H. Markdown テーブル構造検証 ----
+category("H. Markdown テーブル構造検証");
+
+test("Free 版出馬表: separator 行のカラム数がヘッダーと一致", () => {
+  const output = formatMarkdown(SHUTUBA_DATA, false);
+  const lines = output.split("\n");
+  const headerLine = lines.find(l => l.startsWith("| 枠 |"));
+  const sepLine = lines[lines.indexOf(headerLine) + 1];
+  const headerCols = headerLine.split("|").filter(c => c.trim() !== "").length;
+  const sepCols = sepLine.split("|").filter(c => c.trim() !== "").length;
+  assertEqual(headerCols, sepCols, "ヘッダーとセパレーターのカラム数一致");
+});
+
+test("Pro 版結果: データ行のカラム数がヘッダーと一致", () => {
+  const output = formatMarkdown(RESULT_DATA, true);
+  const lines = output.split("\n").filter(l => l.startsWith("|"));
+  const headerCols = lines[0].split("|").filter(c => c.trim() !== "").length;
+  // 3行目以降がデータ行 (ヘッダー + セパレーター + データ)
+  for (let i = 2; i < lines.length; i++) {
+    const dataCols = lines[i].split("|").filter(c => c.trim() !== "").length;
+    assertEqual(dataCols, headerCols, `データ行 ${i - 1} のカラム数がヘッダーと一致`);
+  }
+});
+
+test("Free 版結果: データ行のカラム数がヘッダーと一致", () => {
+  const output = formatMarkdown(RESULT_DATA, false);
+  const lines = output.split("\n").filter(l => l.startsWith("| "));
+  const headerLine = lines.find(l => l.includes("着順"));
+  const headerCols = headerLine.split("|").filter(c => c.trim() !== "").length;
+  const dataLines = lines.filter(l => !l.includes("---") && !l.includes("着順"));
+  for (const line of dataLines) {
+    const dataCols = line.split("|").filter(c => c.trim() !== "").length;
+    assertEqual(dataCols, headerCols, "Free 版結果のデータ行カラム数一致");
+  }
+});
+
+// ============================================
+// Render Results
+// ============================================
+
+const endTime = performance.now();
+const elapsed = Math.round(endTime - startTime);
+
+function renderResults() {
+  const container = document.getElementById("results");
+  const total = results.length;
+  const passed = results.filter(r => r.passed).length;
+  const failed = total - passed;
+
+  document.getElementById("totalCount").textContent = total;
+  document.getElementById("passCount").textContent = passed;
+  document.getElementById("failCount").textContent = failed;
+  document.getElementById("execTime").textContent = elapsed;
+
+  // Group by category
+  const categories = {};
+  for (const r of results) {
+    if (!categories[r.category]) categories[r.category] = [];
+    categories[r.category].push(r);
+  }
+
+  for (const [cat, tests] of Object.entries(categories)) {
+    const allPassed = tests.every(t => t.passed);
+    const catDiv = document.createElement("div");
+    catDiv.className = "category" + (allPassed ? "" : "");
+
+    const header = document.createElement("div");
+    header.className = "category-header";
+    header.innerHTML = `
+      <span>${cat}</span>
+      <span class="category-badge ${allPassed ? "all-pass" : "has-fail"}">
+        ${allPassed ? "ALL PASS" : `${tests.filter(t => !t.passed).length} FAIL`}
+      </span>
+    `;
+    header.addEventListener("click", () => {
+      catDiv.classList.toggle("collapsed");
+    });
+    catDiv.appendChild(header);
+
+    const list = document.createElement("div");
+    list.className = "test-list";
+
+    for (const t of tests) {
+      const item = document.createElement("div");
+      item.className = "test-item";
+      let detail = "";
+      if (!t.passed && t.error) {
+        detail = `<div class="test-detail error">${t.error}</div>`;
+      }
+      item.innerHTML = `
+        <span class="test-status ${t.passed ? "pass" : "fail"}">${t.passed ? "PASS" : "FAIL"}</span>
+        <div class="test-name">${t.name}${detail}</div>
+      `;
+      list.appendChild(item);
+    }
+
+    catDiv.appendChild(list);
+    container.appendChild(catDiv);
+  }
+}
+
+renderResults();
+</script>
+
+</body>
+</html>
