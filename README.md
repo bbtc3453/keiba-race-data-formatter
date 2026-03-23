@@ -12,12 +12,44 @@ Extract and format horse racing data from Japanese racing websites for AI analys
 
 ## Supported Sites
 
-| Site | Page | Data |
-|---|---|---|
-| netkeiba.com | Race card (出馬表) | Horse name, bracket, jockey, trainer, odds, popularity |
-| netkeiba.com | Race result (レース結果) | Finish position, time, margin, last 3F, passage, weight |
-| JRA Official | Race card (出馬表) | Horse name, bracket, jockey, trainer, odds, pedigree |
-| JRA Official | Race result (レース結果) | Finish position, time, margin, last 3F, passage, weight |
+| Site | Page |
+|---|---|
+| netkeiba.com | Race card (出馬表) |
+| netkeiba.com | Race result (レース結果) |
+| JRA Official | Race card (出馬表) |
+| JRA Official | Race result (レース結果) |
+
+### Extractable Data — Race Card (出馬表)
+
+| Data | netkeiba | JRA | Free | Pro |
+|---|:-:|:-:|:-:|:-:|
+| Bracket / Horse number (枠番・馬番) | ○ | ○ | ○ | ○ |
+| Horse name (馬名) | ○ | ○ | ○ | ○ |
+| Sex & age (性齢) | ○ | ○ | ○ | ○ |
+| Carry weight (斤量) | ○ | ○ | ○ | ○ |
+| Jockey (騎手) | ○ | ○ | ○ | ○ |
+| Win odds / Popularity (単勝・人気) | ○ | ○ | ○ | ○ |
+| Trainer (調教師) | ○ | ○ | - | ○ |
+| Body weight (馬体重) | ○ | - | - | ○ |
+| Pedigree — Sire, Dam, Dam's sire (血統) | ○ | ○ | - | ○ |
+| Previous races, up to 4 (前走成績) | - | ○ | - | ○ |
+
+### Extractable Data — Race Result (レース結果)
+
+| Data | netkeiba | JRA | Free | Pro |
+|---|:-:|:-:|:-:|:-:|
+| Finish position (着順) | ○ | ○ | ○ | ○ |
+| Bracket / Horse number (枠番・馬番) | ○ | ○ | ○ | ○ |
+| Horse name (馬名) | ○ | ○ | ○ | ○ |
+| Sex & age (性齢) | ○ | ○ | ○ | ○ |
+| Carry weight (斤量) | ○ | ○ | ○ | ○ |
+| Jockey (騎手) | ○ | ○ | ○ | ○ |
+| Time (タイム) | ○ | ○ | ○ | ○ |
+| Win odds / Popularity (単勝・人気) | ○ | ○ | ○ | ○ |
+| Margin (着差) | ○ | ○ | - | ○ |
+| Sectional position (通過順) | ○ | ○ | - | ○ |
+| Last 3F (上がり 3F) | ○ | ○ | - | ○ |
+| Body weight (馬体重) | ○ | ○ | - | ○ |
 
 ## Installation
 
@@ -46,20 +78,27 @@ Install from the [Chrome Web Store](#) (coming soon).
 
 | Feature | Free | Pro |
 |---|---|---|
-| Markdown output | Yes | Yes |
-| CSV output | - | Yes |
-| AI analysis prompt | - | Yes |
+| Markdown output | ○ | ○ |
+| CSV output | - | ○ |
+| AI prompt — General analysis (総合分析) | ○ | ○ |
+| AI prompt — Race review (レース回顧) | ○ | ○ |
+| AI prompt — Pace analysis (展開予想) | - | ○ |
+| AI prompt — Longshot finder (穴馬発掘) | - | ○ |
+| AI prompt — Pedigree analysis (血統分析) | - | ○ |
+| AI prompt — Track bias (馬場バイアス) | - | ○ |
+| AI prompt — Next-run picks (次走注目馬) | - | ○ |
+| Extended data (trainer, body weight, pedigree, etc.) | - | ○ |
 
 ## Output Formats
 
 ### Markdown
 Standard table format. Copy-paste into any Markdown-compatible tool.
 
-### CSV
-Comma-separated values. Open directly in Excel or Google Sheets.
+### CSV (Pro)
+Comma-separated values. Open directly in Excel or Google Sheets. Includes all data fields.
 
 ### AI Analysis Prompt
-Includes a pre-built prompt template with the data table, ready to paste into AI chatbots for race predictions or post-race reviews.
+Select from 7 prompt templates optimized for different analysis styles. Free users get General Analysis and Race Review. Pro unlocks 5 additional specialized templates.
 
 ## Technical Details
 
