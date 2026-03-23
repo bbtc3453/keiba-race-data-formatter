@@ -127,6 +127,7 @@
       currentFormat = "markdown";
       formatBtns.forEach((b) => b.classList.remove("active"));
       formatBtns[0].classList.add("active");
+      aiTemplateSection.style.display = "none";
       if (extractedData) {
         formattedOutput = formatData(extractedData, currentFormat);
         showPreview(formattedOutput);
@@ -637,12 +638,12 @@
     }
 
     // Previous races (Pro only, JRA)
-    if (pro && data.horses.some((h) => h.prevRaces && h.prevRaces.length > 0)) {
+    if (pro && data.horses.some((h) => h.prevResults && h.prevResults.length > 0)) {
       output += `\n### 前走成績\n\n`;
       output += `| 馬番 | 馬名 | 前走 | 2 走前 | 3 走前 | 4 走前 |\n`;
       output += `| --- | --- | --- | --- | --- | --- |\n`;
       for (const h of data.horses) {
-        const pr = h.prevRaces || [];
+        const pr = h.prevResults || [];
         const cols = [h.horseNumber || "", h.horseName || ""];
         for (let i = 0; i < 4; i++) {
           cols.push(pr[i] ? `${pr[i].rank || ""}着 ${pr[i].raceName || ""}` : "-");
