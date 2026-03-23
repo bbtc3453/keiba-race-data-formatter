@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extName__",
+  "version": "1.0.1",
+  "description": "__MSG_extDescription__",
+  "default_locale": "ja",
+  "permissions": ["activeTab", "clipboardWrite", "scripting", "storage"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://race.netkeiba.com/race/shutuba.html*",
+        "https://race.netkeiba.com/race/result.html*"
+      ],
+      "js": ["content-netkeiba.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.jra.go.jp/JRADB/*"
+      ],
+      "js": ["content-jra.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

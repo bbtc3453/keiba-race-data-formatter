@@ -1,0 +1,521 @@
+/* ============================================
+   JRA Data Extractor - Popup Styles
+   Dark theme for racing data sites
+   ============================================ */
+
+:root {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #0f3460;
+  --text-primary: #e8e8e8;
+  --text-secondary: #a0a0b0;
+  --accent: #e94560;
+  --accent-hover: #ff6b81;
+  --success: #2ecc71;
+  --warning: #f39c12;
+  --error: #e74c3c;
+  --border: #2a2a4a;
+  --radius: 8px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 360px;
+  min-height: 200px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.header-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.header h1 {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-primary);
+}
+
+.header .version {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+/* Main Content */
+.content {
+  padding: 16px;
+}
+
+/* Status Banner */
+.status-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.status-banner.supported {
+  background: rgba(46, 204, 113, 0.12);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  color: var(--success);
+}
+
+.status-banner.unsupported {
+  background: rgba(231, 76, 60, 0.12);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  color: var(--error);
+}
+
+.status-banner.loading {
+  background: rgba(243, 156, 18, 0.12);
+  border: 1px solid rgba(243, 156, 18, 0.3);
+  color: var(--warning);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.supported .status-dot { background: var(--success); }
+.unsupported .status-dot { background: var(--error); }
+.loading .status-dot {
+  background: var(--warning);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Page Info */
+.page-info {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.page-info .site-name {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.page-info .page-type {
+  color: var(--text-primary);
+}
+
+/* Format Selection */
+.format-section {
+  margin-bottom: 14px;
+}
+
+.format-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.format-options {
+  display: flex;
+  gap: 6px;
+}
+
+.format-btn {
+  flex: 1;
+  padding: 8px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.format-btn:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.format-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Action Buttons */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-extract {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  letter-spacing: 0.3px;
+}
+
+.btn-extract:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.btn-extract:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-extract:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-copy {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: none;
+}
+
+.btn-copy:hover {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.btn-copy.visible {
+  display: block;
+}
+
+.btn-copy.copied {
+  border-color: var(--success);
+  color: var(--success);
+  background: rgba(46, 204, 113, 0.1);
+}
+
+/* Data Preview */
+.preview-section {
+  margin-top: 14px;
+  display: none;
+}
+
+.preview-section.visible {
+  display: block;
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.preview-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.preview-meta {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.preview-box {
+  background: #0d0d1a;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.preview-box::-webkit-scrollbar {
+  width: 6px;
+}
+
+.preview-box::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.preview-box::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+/* Race Summary */
+.race-summary {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: rgba(233, 69, 96, 0.08);
+  border: 1px solid rgba(233, 69, 96, 0.2);
+  border-radius: var(--radius);
+  display: none;
+}
+
+.race-summary.visible {
+  display: block;
+}
+
+.race-summary .race-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.race-summary .race-detail {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.race-summary .horse-count {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* Pro Badge */
+.pro-badge {
+  font-size: 9px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #f39c12, #e67e22);
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 4px;
+  vertical-align: middle;
+  letter-spacing: 0.5px;
+}
+
+.format-btn.pro-only:not(.unlocked) {
+  opacity: 0.55;
+  cursor: pointer;
+  position: relative;
+}
+
+.format-btn.pro-only:not(.unlocked):hover {
+  border-color: #f39c12;
+}
+
+.format-btn.pro-only.unlocked .pro-badge {
+  display: none;
+}
+
+/* License Section */
+.license-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.license-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.license-status.free {
+  color: var(--text-secondary);
+}
+
+.license-status.pro {
+  color: #f39c12;
+}
+
+.license-icon {
+  font-size: 10px;
+}
+
+.btn-upgrade {
+  margin-left: auto;
+  padding: 4px 10px;
+  border: 1px solid #f39c12;
+  border-radius: 4px;
+  background: transparent;
+  color: #f39c12;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-upgrade:hover {
+  background: rgba(243, 156, 18, 0.15);
+}
+
+.btn-deactivate {
+  margin-left: auto;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-deactivate:hover {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+/* License Form */
+.license-form {
+  margin-top: 10px;
+}
+
+.license-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: "SF Mono", "Fira Code", monospace;
+  letter-spacing: 1px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.license-input:focus {
+  border-color: #f39c12;
+}
+
+.license-input::placeholder {
+  color: var(--text-secondary);
+  font-family: inherit;
+  letter-spacing: 0;
+}
+
+.license-form-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.btn-activate {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: var(--radius);
+  background: #f39c12;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-activate:hover {
+  background: #e67e22;
+}
+
+.btn-cancel-license {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-cancel-license:hover {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+}
+
+.license-error {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--error);
+}
+
+.buy-link {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #f39c12;
+  text-decoration: none;
+  text-align: center;
+}
+
+.buy-link:hover {
+  text-decoration: underline;
+}
+
+/* Footer */
+.footer {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+}

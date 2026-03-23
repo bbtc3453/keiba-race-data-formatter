@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "Keiba Race Data Formatter - AI 競馬予想データ整形"
+  },
+  "extDescription": {
+    "message": "netkeiba.com ・ JRA 公式の出馬表/レース結果をワンクリックで Markdown ・ CSV ・ AI プロンプトに変換。ChatGPT/Claude にそのまま貼り付けて競馬予想・回顧ができます。外部通信なし。"
+  }
+}

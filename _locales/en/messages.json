@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "Keiba Race Data Formatter - Japanese Horse Racing Data for AI"
+  },
+  "extDescription": {
+    "message": "Extract race card & result data from netkeiba.com and JRA official site. One-click conversion to Markdown, CSV, or AI prompt. Paste directly into ChatGPT/Claude for predictions. No data sent externally."
+  }
+}

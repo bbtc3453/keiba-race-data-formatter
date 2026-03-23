@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - Keiba Race Data Formatter</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+      line-height: 1.7;
+      color: #1a1a2e;
+      background: #fafafa;
+    }
+    h1 { font-size: 1.6rem; border-bottom: 2px solid #e94560; padding-bottom: 0.5rem; }
+    h2 { font-size: 1.2rem; margin-top: 2rem; color: #16213e; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+    th, td { border: 1px solid #ddd; padding: 0.5rem 0.75rem; text-align: left; }
+    th { background: #16213e; color: #fff; }
+    code { background: #eee; padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.85rem; }
+    ul { padding-left: 1.5rem; }
+    .updated { color: #666; font-size: 0.9rem; }
+    a { color: #e94560; }
+  </style>
+</head>
+<body>
+
+<h1>Keiba Race Data Formatter - Privacy Policy</h1>
+<p class="updated">Last updated: 2026-03-22</p>
+
+<h2>Overview</h2>
+<p>Keiba Race Data Formatter (the "Extension") is a Chrome browser extension that formats horse racing data from web pages the user is actively viewing. This privacy policy explains what data the Extension accesses, how it is used, and how it is protected.</p>
+
+<h2>Data Collection and Usage</h2>
+<h3>Data the Extension Accesses</h3>
+<table>
+  <tr><th>Data Type</th><th>Purpose</th><th>Stored?</th><th>Sent Externally?</th></tr>
+  <tr><td>Page DOM content</td><td>Extract and format horse racing data from the active tab</td><td>No</td><td>No</td></tr>
+  <tr><td>License key</td><td>Verify Pro license activation</td><td>Yes (locally)</td><td>No</td></tr>
+  <tr><td>License status</td><td>Remember Pro activation state</td><td>Yes (locally)</td><td>No</td></tr>
+</table>
+
+<h3>DOM Content (Horse Racing Data)</h3>
+<ul>
+  <li>The Extension reads the DOM (Document Object Model) of web pages you are actively viewing.</li>
+  <li>This data is processed entirely within your browser.</li>
+  <li>Extracted data is copied to your clipboard only when you explicitly click the "Copy" button.</li>
+  <li><strong>No page content is stored, cached, or transmitted to any external server.</strong></li>
+</ul>
+
+<h3>License Information</h3>
+<ul>
+  <li>If you activate a Pro license, your license key is stored locally using Chrome's <code>chrome.storage.local</code> API.</li>
+  <li>The license key is validated locally within your browser. <strong>No license data is sent to any external server.</strong></li>
+</ul>
+
+<h2>Permissions Used</h2>
+<table>
+  <tr><th>Permission</th><th>Reason</th></tr>
+  <tr><td><code>activeTab</code></td><td>Access the current tab's page content when the user clicks the extension icon</td></tr>
+  <tr><td><code>scripting</code></td><td>Execute the data extraction script on the active page</td></tr>
+  <tr><td><code>clipboardWrite</code></td><td>Copy formatted data to the user's clipboard</td></tr>
+  <tr><td><code>storage</code></td><td>Store license activation status locally</td></tr>
+</table>
+
+<h2>Data the Extension Does NOT Collect</h2>
+<ul>
+  <li>Personal information (name, email, address)</li>
+  <li>Browsing history</li>
+  <li>Cookies or session data</li>
+  <li>Analytics or usage tracking data</li>
+  <li>Data from pages other than supported horse racing sites</li>
+</ul>
+
+<h2>Third-Party Services</h2>
+<p>The Extension does not communicate with any third-party services. All data processing and license validation occurs locally within your browser.</p>
+
+<h2>Data Storage</h2>
+<ul>
+  <li>All data is stored locally on your device using Chrome's built-in storage API.</li>
+  <li>No data is stored on external servers.</li>
+  <li>You can remove all stored data by uninstalling the Extension or clearing the extension's storage via Chrome settings.</li>
+</ul>
+
+<h2>Children's Privacy</h2>
+<p>The Extension does not knowingly collect any information from children under 13 years of age.</p>
+
+<h2>Changes to This Policy</h2>
+<p>We may update this privacy policy from time to time. Changes will be reflected in the "Last updated" date above.</p>
+
+<h2>Contact</h2>
+<p>If you have questions about this privacy policy, please open an issue on our <a href="https://github.com/bbtc3453/keiba-race-data-formatter/issues">GitHub repository</a>.</p>
+
+<hr>
+<p><small>This privacy policy is provided in compliance with the <a href="https://developer.chrome.com/docs/webstore/program-policies/">Chrome Web Store Developer Program Policies</a>.</small></p>
+
+</body>
+</html>
