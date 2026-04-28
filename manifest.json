@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "1.1.0",
+  "version": "1.3.0",
   "description": "__MSG_extDescription__",
   "default_locale": "ja",
-  "permissions": ["activeTab", "clipboardWrite", "scripting", "storage"],
+  "permissions": ["activeTab", "clipboardWrite", "downloads", "scripting", "storage"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -22,7 +22,9 @@
     {
       "matches": [
         "https://race.netkeiba.com/race/shutuba.html*",
-        "https://race.netkeiba.com/race/result.html*"
+        "https://race.netkeiba.com/race/result.html*",
+        "https://nar.netkeiba.com/race/shutuba.html*",
+        "https://nar.netkeiba.com/race/result.html*"
       ],
       "js": ["content-netkeiba.js"],
       "run_at": "document_idle"

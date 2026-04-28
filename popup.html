@@ -17,7 +17,7 @@
       <circle cx="14" cy="10" r="1.5" fill="#fff"/>
     </svg>
     <h1>Keiba Race Data Formatter</h1>
-    <span class="version">v1.1.0</span>
+    <span class="version">v1.3.0</span>
   </div>
 
   <!-- Main Content -->
@@ -87,6 +87,7 @@
     <div class="actions">
       <button id="btnExtract" class="btn-extract" disabled>データ抽出</button>
       <button id="btnCopy" class="btn-copy">クリップボードにコピー</button>
+      <button id="btnDownloadCsv" class="btn-copy" style="display:none;">CSV ダウンロード</button>
     </div>
 
     <!-- Preview -->
@@ -96,6 +97,15 @@
         <span class="preview-meta" id="previewMeta"></span>
       </div>
       <div class="preview-box" id="previewBox"></div>
+    </div>
+
+    <!-- History -->
+    <div id="historySection" class="history-section" style="display:none;">
+      <div class="history-header">
+        <span class="history-label">抽出履歴</span>
+        <button id="btnClearHistory" class="btn-clear-history">クリア</button>
+      </div>
+      <div id="historyList" class="history-list"></div>
     </div>
 
   </div>

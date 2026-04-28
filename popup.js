@@ -9,6 +9,10 @@
   // Payhip 販売ページ URL（商品作成後に差し替え）
   const STORE_URL = "https://payhip.com/b/0E3rn";
 
+  // --- Config ---
+  const HISTORY_MAX = 10;
+  const AI_FREE_LIMIT = 3; // Free 版 AI プロンプト月次上限
+
   // --- State ---
   let currentFormat = "markdown";
   let extractedData = null;
@@ -28,6 +32,7 @@
   const formatSection = document.getElementById("formatSection");
   const btnExtract = document.getElementById("btnExtract");
   const btnCopy = document.getElementById("btnCopy");
+  const btnDownloadCsv = document.getElementById("btnDownloadCsv");
   const previewSection = document.getElementById("previewSection");
   const previewBox = document.getElementById("previewBox");
   const previewMeta = document.getElementById("previewMeta");
@@ -47,6 +52,11 @@
   const btnDeactivate = document.getElementById("btnDeactivate");
   const btnBuyLink = document.getElementById("btnBuyLink");
 
+  // History DOM
+  const historySection = document.getElementById("historySection");
+  const historyList = document.getElementById("historyList");
+  const btnClearHistory = document.getElementById("btnClearHistory");
+
   // --- Supported URL patterns ---
   const SUPPORTED_SITES = [
     {
@@ -57,6 +67,16 @@
     {
       pattern: /^https:\/\/race\.netkeiba\.com\/race\/result\.html/,
       site: "netkeiba.com",
+      type: "レース結果",
+    },
+    {
+      pattern: /^https:\/\/nar\.netkeiba\.com\/race\/shutuba\.html/,
+      site: "netkeiba.com (地方)",
+      type: "出馬表",
+    },
+    {
+      pattern: /^https:\/\/nar\.netkeiba\.com\/race\/result\.html/,
+      site: "netkeiba.com (地方)",
       type: "レース結果",
     },
     {
@@ -209,8 +229,11 @@
     setupFormatButtons();
     setupExtractButton();
     setupCopyButton();
+    setupDownloadCsvButton();
+    setupHistoryUI();
     await loadLicense();
     await checkCurrentPage();
+    await renderHistory();
   }
 
   // --- Check if current page is supported ---
@@ -285,8 +308,17 @@
         if (format === "ai") {
           renderAITemplates();
           aiTemplateSection.style.display = "block";
+          loadAiUsageDisplay();
         } else {
           aiTemplateSection.style.display = "none";
+        }
+
+        // Show/hide CSV download button
+        if (format === "csv") {
+          btnDownloadCsv.classList.add("visible");
+        } else {
+          btnDownloadCsv.classList.remove("visible");
+          btnDownloadCsv.style.display = "";
         }
 
         // Re-format if data already extracted
@@ -318,13 +350,19 @@
         btn.textContent = tpl.label;
       }
 
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         // Pro-only check
         if (!tpl.free && !isPro) {
           licenseFree.style.display = "none";
           licenseForm.style.display = "block";
           licenseKeyInput.focus();
           return;
+        }
+
+        // Free 版 月次使用回数制限チェック
+        if (!isPro) {
+          const allowed = await checkAndIncrementAiUsage();
+          if (!allowed) return;
         }
 
         // Select this template
@@ -390,6 +428,7 @@
       const details = [
         data.raceInfo.date,
         data.raceInfo.track,
+        data.raceInfo.raceNumber,
         data.raceInfo.distance,
         data.raceInfo.surface,
         data.raceInfo.raceClass,
@@ -402,6 +441,7 @@
     }
 
     btnCopy.classList.add("visible");
+    saveHistory(data);
   }
 
   function showExtractError(msg) {
@@ -437,6 +477,29 @@
           btnCopy.classList.remove("copied");
         }, 2000);
       }
+    });
+  }
+
+  // --- CSV Download Button ---
+  function setupDownloadCsvButton() {
+    btnDownloadCsv.addEventListener("click", () => {
+      if (!formattedOutput) return;
+      const ri = extractedData?.raceInfo || {};
+      const raceName = ri.raceName || "race";
+      const date = ri.date ? ri.date.replace(/\//g, "-") : new Date().toISOString().slice(0, 10);
+      const filename = `${date}_${raceName}.csv`;
+      const blob = new Blob(["﻿" + formattedOutput], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      chrome.downloads.download(
+        {
+          url,
+          filename,
+          saveAs: true,
+        },
+        () => {
+          URL.revokeObjectURL(url);
+        }
+      );
     });
   }
 
@@ -736,6 +799,168 @@
     output += formatMarkdown(data);
 
     return output;
+  }
+
+  // ============================================
+  // History (抽出履歴 — 最大 HISTORY_MAX 件)
+  // ============================================
+
+  async function saveHistory(data) {
+    try {
+      const ri = data.raceInfo || {};
+      const entry = {
+        id: Date.now(),
+        raceName: ri.raceName || "レース名不明",
+        track: ri.track || "",
+        raceNumber: ri.raceNumber || "",
+        date: ri.date || "",
+        horseCount: data.horses.length,
+        data: data,
+      };
+
+      const result = await chrome.storage.local.get(["extractHistory"]);
+      const history = result.extractHistory || [];
+      history.unshift(entry);
+      if (history.length > HISTORY_MAX) history.splice(HISTORY_MAX);
+      await chrome.storage.local.set({ extractHistory: history });
+      await renderHistory();
+    } catch {
+      // storage unavailable
+    }
+  }
+
+  async function renderHistory() {
+    try {
+      const result = await chrome.storage.local.get(["extractHistory"]);
+      const history = result.extractHistory || [];
+      if (history.length === 0) {
+        historySection.style.display = "none";
+        return;
+      }
+
+      historySection.style.display = "block";
+      historyList.innerHTML = "";
+      history.forEach((entry) => {
+        const item = document.createElement("div");
+        item.className = "history-item";
+
+        const nameEl = document.createElement("span");
+        nameEl.className = "history-item-name";
+        nameEl.textContent = [entry.track, entry.raceNumber, entry.raceName]
+          .filter(Boolean)
+          .join(" ");
+
+        const metaEl = document.createElement("span");
+        metaEl.className = "history-item-meta";
+        metaEl.textContent = `${entry.horseCount}頭`;
+
+        item.appendChild(nameEl);
+        item.appendChild(metaEl);
+
+        item.addEventListener("click", () => {
+          extractedData = entry.data;
+          formattedOutput = formatData(extractedData, currentFormat);
+          showExtractSuccessFromHistory(entry);
+          showPreview(formattedOutput);
+        });
+
+        historyList.appendChild(item);
+      });
+    } catch {
+      historySection.style.display = "none";
+    }
+  }
+
+  function showExtractSuccessFromHistory(entry) {
+    statusBanner.className = "status-banner supported";
+    statusText.textContent = "履歴から復元";
+    btnExtract.disabled = false;
+
+    raceName.textContent = entry.raceName;
+    const details = [entry.date, entry.track, entry.raceNumber]
+      .filter(Boolean)
+      .join(" / ");
+    raceDetail.textContent = details;
+    horseCount.textContent = `${entry.horseCount} 頭`;
+    raceSummary.classList.add("visible");
+    btnCopy.classList.add("visible");
+  }
+
+  function setupHistoryUI() {
+    btnClearHistory.addEventListener("click", async () => {
+      await chrome.storage.local.remove(["extractHistory"]);
+      await renderHistory();
+    });
+  }
+
+  // ============================================
+  // AI Usage Limit (Free 版 月次カウンター)
+  // ============================================
+
+  async function checkAndIncrementAiUsage() {
+    try {
+      const now = new Date();
+      const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
+      const result = await chrome.storage.local.get(["aiUsage"]);
+      const usage = result.aiUsage || {};
+
+      const count = usage[monthKey] || 0;
+
+      if (count >= AI_FREE_LIMIT) {
+        showAiLimitReached(count);
+        return false;
+      }
+
+      usage[monthKey] = count + 1;
+      await chrome.storage.local.set({ aiUsage: usage });
+      updateAiUsageDisplay(usage[monthKey]);
+      return true;
+    } catch {
+      return true; // storage エラー時は制限しない
+    }
+  }
+
+  async function loadAiUsageDisplay() {
+    try {
+      const now = new Date();
+      const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
+      const result = await chrome.storage.local.get(["aiUsage"]);
+      const usage = result.aiUsage || {};
+      const count = usage[monthKey] || 0;
+      updateAiUsageDisplay(count);
+    } catch {
+      // ignore
+    }
+  }
+
+  function updateAiUsageDisplay(count) {
+    // 既存の表示を削除
+    document.querySelectorAll(".ai-usage-info").forEach((el) => el.remove());
+
+    if (isPro) return;
+
+    const info = document.createElement("div");
+    info.className =
+      "ai-usage-info" + (count >= AI_FREE_LIMIT ? " limit-reached" : "");
+
+    if (count >= AI_FREE_LIMIT) {
+      info.innerHTML = `今月の AI プロンプト上限（${AI_FREE_LIMIT}回）に達しました。<br><a href="#" id="usageBuyLink">Pro にアップグレード &rarr;</a>`;
+      aiTemplateSection.appendChild(info);
+      const link = info.querySelector("#usageBuyLink");
+      if (link) {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          chrome.tabs.create({ url: STORE_URL });
+        });
+      }
+    } else {
+      info.innerHTML = `今月の使用回数: <span class="usage-count">${count} / ${AI_FREE_LIMIT}</span> 回`;
+      aiTemplateSection.appendChild(info);
+    }
+  }
+
+  function showAiLimitReached(count) {
+    updateAiUsageDisplay(count);
   }
 
   // --- Start ---

@@ -1,6 +1,9 @@
 # Keiba Race Data Formatter
 
-Extract and format horse racing data from Japanese racing websites for AI analysis.
+[![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-Free-blue?logo=googlechrome)](https://chromewebstore.google.com/detail/keiba-race-data-formatter/beghbhpfmccfgojnpaoghlkjkhfpndag)
+[![Payhip](https://img.shields.io/badge/Pro-$9.99-green)](https://payhip.com/b/0E3rn)
+
+One-click copy of formatted race data from Japanese horse racing websites. For AI predictions, spreadsheet analysis, blogging, and more.
 
 ## Features
 
@@ -55,7 +58,7 @@ Extract and format horse racing data from Japanese racing websites for AI analys
 
 ### Chrome Web Store (Recommended)
 
-Install from the [Chrome Web Store](#) (coming soon).
+Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/keiba-race-data-formatter/beghbhpfmccfgojnpaoghlkjkhfpndag) (Free).
 
 ### Manual Install (Developer Mode)
 
