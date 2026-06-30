@@ -22,12 +22,12 @@
   // --- Funnel instrumentation (Phase 0) ---
   // ローカル集計のみ（ chrome.storage.local ・外部送信なし・製品リスクゼロ）。
   // どこで離脱するか（ popup 開封→フォーマット選択→ Pro ロック接触→アップグレード→店舗）を
-  // n=1 の当て推量から実数に変えるための計測。全ユーザー横断の集計が必要になったら
-  // REMOTE_ANALYTICS_URL を設定し、 privacy policy / host_permissions を更新する
-  // （ Phase 0.5 ・要・本人判断）。読み出し: DevTools コンソールで
+  // n=1 の当て推量から実数に変えるための計測。読み出し: DevTools コンソールで
   //   chrome.storage.local.get("funnelEvents", console.log)
+  // 注: 全ユーザー横断の集計（リモート送信）が必要になったら、その時点で
+  //   host_permissions 追加 + privacy policy 更新 + 送信処理の実装をセットで行う。
+  //   審査リスク回避のため、送信先が未確定の現状ではリモート送信コードは持たない。
   const FUNNEL_KEY = "funnelEvents";
-  const REMOTE_ANALYTICS_URL = null; // 例: "https://<endpoint>" を入れると sendBeacon 送信
   const FUNNEL_BYDAY_RETENTION = 90; // byDay は直近 N 日のみ保持（ storage 肥大化を防ぐ）
 
   // 同一クリックで track() が連続発火しても storage の read-modify-write が
@@ -53,12 +53,8 @@
       }
       data[event] = rec;
       await chrome.storage.local.set({ [FUNNEL_KEY]: data });
-      if (REMOTE_ANALYTICS_URL && navigator.sendBeacon) {
-        navigator.sendBeacon(
-          REMOTE_ANALYTICS_URL,
-          JSON.stringify({ event, meta: meta || null, ts: Date.now(), isPro })
-        );
-      }
+      // リモート送信は意図的に未実装（外部送信ゼロ）。 meta 引数は将来の
+      // リモート集計時に使う想定で各呼び出し側に残しているが、現状は記録しない。
     } catch (_) {
       // 計測の失敗で本体機能を止めない
     }
@@ -463,6 +459,7 @@
         if (data && data.horses && data.horses.length > 0) {
           extractedData = data;
           formattedOutput = formatData(data, currentFormat);
+          track("extract_success", { horseCount: data.horses.length });
           showExtractSuccess(data);
           showPreview(formattedOutput);
         } else {
@@ -512,9 +509,16 @@
     btnCopy.addEventListener("click", async () => {
       if (!formattedOutput) return;
 
+      // AI 形式のとき、コピー後に「貼り付けが必要」と伝える補足ラベルを用意
+      const isAiFormat = currentFormat === "ai";
+      const copiedLabel = isAiFormat
+        ? "コピー完了！ ChatGPT/Claude に貼り付けてください"
+        : "コピーしました!";
+
       try {
         await navigator.clipboard.writeText(formattedOutput);
-        btnCopy.textContent = "コピーしました!";
+        track("copy_success", { format: currentFormat });
+        btnCopy.textContent = copiedLabel;
         btnCopy.classList.add("copied");
         setTimeout(() => {
           btnCopy.textContent = "クリップボードにコピー";
@@ -527,7 +531,8 @@
         textarea.select();
         document.execCommand("copy");
         document.body.removeChild(textarea);
-        btnCopy.textContent = "コピーしました!";
+        track("copy_success", { format: currentFormat });
+        btnCopy.textContent = copiedLabel;
         btnCopy.classList.add("copied");
         setTimeout(() => {
           btnCopy.textContent = "クリップボードにコピー";
@@ -617,7 +622,7 @@
         `- 「警戒」「見送り」の場合は "買わない理由" を具体的に明記\n` +
         `- 確定オッズがデータに無い場合は「オッズ確定後に再評価」と明記する\n` +
         `- 出力の最後に必ず次の一文をそのまま添える：\n` +
-        `  「※これは"買っていい条件を満たすか"の判定であり、的中保証ではありません。1番人気1.5-2.0倍でも約4割は飛びます。最終判断は自己責任で。」\n\n`,
+        `  「※これは"買っていい条件を満たすか"の判定であり、的中保証ではありません。 1 番人気 1.5-2.0 倍でも約 4 割は飛びます。最終判断は自己責任で。」\n\n`,
     },
     pace: {
       label: "展開予想",
@@ -992,6 +997,7 @@
       const count = usage[monthKey] || 0;
 
       if (count >= AI_FREE_LIMIT) {
+        track("ai_limit_reached", { limit: AI_FREE_LIMIT });
         showAiLimitReached(count);
         return false;
       }

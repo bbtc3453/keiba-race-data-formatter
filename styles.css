@@ -649,6 +649,13 @@ body {
   color: var(--text-primary);
 }
 
+.ai-usage-note {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 6px;
+}
+
 /* Footer */
 .footer {
   padding: 10px 16px;
