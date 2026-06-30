@@ -40,6 +40,7 @@
   <tr><td>Page DOM content</td><td>Extract and format horse racing data from the active tab</td><td>No</td><td>No</td></tr>
   <tr><td>License key</td><td>Verify Pro license activation</td><td>Yes (locally)</td><td>No</td></tr>
   <tr><td>License status</td><td>Remember Pro activation state</td><td>Yes (locally)</td><td>No</td></tr>
+  <tr><td>Anonymous usage counters</td><td>Count in-extension actions (e.g. popup opens, format clicks) to improve the product</td><td>Yes (locally)</td><td>No</td></tr>
 </table>
 
 <h3>DOM Content (Horse Racing Data)</h3>
@@ -56,13 +57,20 @@
   <li>The license key is validated locally within your browser. <strong>No license data is sent to any external server.</strong></li>
 </ul>
 
+<h3>Anonymous Usage Counters</h3>
+<ul>
+  <li>The Extension records anonymous counters of in-extension actions (for example, how often the popup is opened or a format button is clicked) using Chrome's <code>chrome.storage.local</code> API, in order to understand which features are used and improve the product.</li>
+  <li>These counters contain no personal information, no page content, and no race data — only event names and counts.</li>
+  <li><strong>This data never leaves your device and is not transmitted to any external server or third party.</strong> You can clear it at any time by removing the extension's local storage.</li>
+</ul>
+
 <h2>Permissions Used</h2>
 <table>
   <tr><th>Permission</th><th>Reason</th></tr>
   <tr><td><code>activeTab</code></td><td>Access the current tab's page content when the user clicks the extension icon</td></tr>
   <tr><td><code>scripting</code></td><td>Execute the data extraction script on the active page</td></tr>
   <tr><td><code>clipboardWrite</code></td><td>Copy formatted data to the user's clipboard</td></tr>
-  <tr><td><code>storage</code></td><td>Store license activation status locally</td></tr>
+  <tr><td><code>storage</code></td><td>Store license activation status and anonymous local usage counters</td></tr>
 </table>
 
 <h2>Data the Extension Does NOT Collect</h2>
@@ -70,7 +78,7 @@
   <li>Personal information (name, email, address)</li>
   <li>Browsing history</li>
   <li>Cookies or session data</li>
-  <li>Analytics or usage tracking data</li>
+  <li>Analytics or usage data transmitted to any external server or third party (in-extension usage counters are stored locally only and never leave your device — see "Anonymous Usage Counters" above)</li>
   <li>Data from pages other than supported horse racing sites</li>
 </ul>
 
