@@ -20,16 +20,22 @@
   let isPro = false;
 
   // --- Funnel instrumentation (Phase 0) ---
-  // ローカル集計のみ（chrome.storage.local・外部送信なし・製品リスクゼロ）。
-  // どこで離脱するか（popup 開封→フォーマット選択→Pro ロック接触→アップグレード→店舗）を
+  // ローカル集計のみ（ chrome.storage.local ・外部送信なし・製品リスクゼロ）。
+  // どこで離脱するか（ popup 開封→フォーマット選択→ Pro ロック接触→アップグレード→店舗）を
   // n=1 の当て推量から実数に変えるための計測。全ユーザー横断の集計が必要になったら
-  // REMOTE_ANALYTICS_URL を設定し、privacy policy / host_permissions を更新する
-  // （Phase 0.5・要・本人判断）。読み出し: DevTools コンソールで
+  // REMOTE_ANALYTICS_URL を設定し、 privacy policy / host_permissions を更新する
+  // （ Phase 0.5 ・要・本人判断）。読み出し: DevTools コンソールで
   //   chrome.storage.local.get("funnelEvents", console.log)
   const FUNNEL_KEY = "funnelEvents";
   const REMOTE_ANALYTICS_URL = null; // 例: "https://<endpoint>" を入れると sendBeacon 送信
+  const FUNNEL_BYDAY_RETENTION = 90; // byDay は直近 N 日のみ保持（ storage 肥大化を防ぐ）
 
-  async function track(event, meta) {
+  // 同一クリックで track() が連続発火しても storage の read-modify-write が
+  // 競合しないよう、全 track 呼び出しを 1 本のチェーンで直列化する
+  // （単一 popup プロセス内なら取りこぼしゼロ）。
+  let _trackChain = Promise.resolve();
+
+  async function _trackImpl(event, meta) {
     try {
       const store = await chrome.storage.local.get([FUNNEL_KEY]);
       const data = store[FUNNEL_KEY] || {};
@@ -38,6 +44,13 @@
       rec.count += 1;
       rec.byDay[day] = (rec.byDay[day] || 0) + 1;
       rec.lastTs = Date.now();
+      // byDay を直近 N 日に刈り取り（集計値 count/lastTs は別途保持済み）
+      const days = Object.keys(rec.byDay).sort();
+      if (days.length > FUNNEL_BYDAY_RETENTION) {
+        for (const d of days.slice(0, days.length - FUNNEL_BYDAY_RETENTION)) {
+          delete rec.byDay[d];
+        }
+      }
       data[event] = rec;
       await chrome.storage.local.set({ [FUNNEL_KEY]: data });
       if (REMOTE_ANALYTICS_URL && navigator.sendBeacon) {
@@ -49,6 +62,11 @@
     } catch (_) {
       // 計測の失敗で本体機能を止めない
     }
+  }
+
+  function track(event, meta) {
+    _trackChain = _trackChain.then(() => _trackImpl(event, meta)).catch(() => {});
+    return _trackChain;
   }
 
   // --- DOM Elements ---
@@ -573,7 +591,7 @@
         `3. 馬場適性\n` +
         `4. 推奨買い目（単勝・複勝・馬連）\n\n`,
     },
-    // --- 判断エンジン（ブランドの核「買わない理由を探せ」・Pro 看板）---
+    // --- 判断エンジン（ブランドの核「買わない理由を探せ」・ Pro 看板）---
     checklist_verdict: {
       label: "買う/見送り判定",
       forResult: false,
@@ -583,15 +601,15 @@
         `このツールの思想は「買う馬を探す」のではなく「買わない理由を探す」。\n` +
         `下のチェックリストで 1 番人気（軸候補）を機械的に評価し、最後に結論を 1 つ出してください。\n` +
         `※必勝法ではありません。規律で危ない馬券を見送るためのフィルターです。\n\n` +
-        `■ 絶対条件（1 つでも × なら結論は必ず「見送り」）\n` +
+        `■ 絶対条件（ 1 つでも × なら結論は必ず「見送り」）\n` +
         `1. 1 番人気か（前日〜当日で人気の入れ替わりがない）\n` +
-        `2. 確定単勝オッズが 1.5〜2.0 倍に収まるか（1.4 倍以下は妙味なし／2.1 倍以上は断然軸でない）\n` +
+        `2. 確定単勝オッズが 1.5 〜 2.0 倍に収まるか（ 1.4 倍以下は妙味なし／ 2.1 倍以上は断然軸でない）\n` +
         `3. 途中オッズから 30% 以上の急落がないか（急落は危険サイン）\n` +
         `4. 2 クラス以上の昇級戦でないか\n\n` +
-        `■ 強い条件（複数 × なら「見送り」、1 つ × は「警戒」）\n` +
+        `■ 強い条件（複数 × なら「見送り」、 1 つ × は「警戒」）\n` +
         `5. 連対率 60% 以上、または直近 5 走で 3 勝以上か\n` +
         `6. 当該コース・距離で好走歴があるか\n` +
-        `7. 前走大敗（5 着以下）からの巻き返し狙いでないか\n\n` +
+        `7. 前走大敗（ 5 着以下）からの巻き返し狙いでないか\n\n` +
         `■ 出力フォーマット\n` +
         `- 各条件を ○ / × / 不明 で判定（データに無い項目は「不明」とし、推測で ○ にしない）\n` +
         `- 総合判定：【買う】/【警戒】/【見送り】 を必ず 1 つ\n` +
