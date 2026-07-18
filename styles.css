@@ -664,3 +664,17 @@ body {
   font-size: 11px;
   color: var(--text-secondary);
 }
+.footer .guide-link {
+  display: inline-block;
+  margin-bottom: 6px;
+  color: #e94560;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.footer .guide-link:hover {
+  text-decoration: underline;
+}
+.footer .footer-note {
+  color: var(--text-secondary);
+}
