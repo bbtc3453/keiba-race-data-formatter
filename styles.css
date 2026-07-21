@@ -849,3 +849,9 @@ body {
 }
 .btn-collection-export:hover { background: #e08e0b; }
 .btn-collection-export.copied { background: var(--success); color: #fff; }
+.collection-hint {
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-align: center;
+}

@@ -244,6 +244,9 @@
     document.querySelectorAll(".format-btn.pro-only").forEach((btn) => {
       btn.classList.add("unlocked");
     });
+    // Pro なら収集ボタンの PRO バッジは不要（ロックに見せない）
+    const cb = btnCollect && btnCollect.querySelector(".pro-badge");
+    if (cb) cb.style.display = "none";
   }
 
   function updateFreeUI() {
@@ -679,19 +682,24 @@
     } catch (e) {}
   }
 
+  let _collectOrigHTML = null;
   function flashCollect(msg) {
     if (!btnCollect) return;
-    const orig = btnCollect.innerHTML;
+    // 連打してもフラッシュ中の文言を保存しないよう、原文は最初の 1 回だけキャプチャ。
+    if (_collectOrigHTML === null) _collectOrigHTML = btnCollect.innerHTML;
     btnCollect.textContent = msg;
-    setTimeout(() => {
-      btnCollect.innerHTML = orig;
+    clearTimeout(flashCollect._t);
+    flashCollect._t = setTimeout(() => {
+      btnCollect.innerHTML = _collectOrigHTML;
+      _collectOrigHTML = null;
     }, 1500);
   }
 
   async function addToCollection(data) {
     const list = await loadCollection();
     const key = raceKey(data);
-    if (list.some((d) => raceKey(d) === key)) {
+    // raceInfo 欠損で key が空のときは dedupe を諦める（別レース誤判定を防ぐ）。
+    if (key && list.some((d) => raceKey(d) === key)) {
       flashCollect("このレースは収集済みです");
       return;
     }
@@ -728,9 +736,12 @@
       del.title = "削除";
       del.addEventListener("click", async () => {
         const cur = await loadCollection();
-        cur.splice(i, 1);
-        await saveCollection(cur);
-        renderCollection(cur);
+        const k = raceKey(data);
+        const next = k
+          ? cur.filter((d) => raceKey(d) !== k)
+          : cur.filter((_, idx) => idx !== i);
+        await saveCollection(next);
+        renderCollection(next);
       });
       row.appendChild(span);
       row.appendChild(del);
@@ -738,18 +749,30 @@
     });
   }
 
-  // 複数レースを 1 つの出力に結合。AI 形式は「全レース比較→今日の1本を選ぶ」プロンプトに。
+  // 複数レースを 1 つの出力に結合。
   function buildCombined(list, format) {
+    if (format === "csv") {
+      // Excel を壊さないよう "---" 区切りは使わない（各レースは先頭に # ヘッダ行を持つ）。
+      return list.map((d) => formatData(d, "csv")).join("\n\n");
+    }
     if (format === "ai") {
-      const isResult = !!(list[0] && list[0].raceInfo && list[0].raceInfo.isResult);
+      // 出馬表のみを比較対象に（結果レースが混ざっても破綻しないよう除外）。
+      const cards = list.filter((d) => !(d.raceInfo && d.raceInfo.isResult));
+      const races = cards.length ? cards : list;
       let out =
-        "以下は本日注目している " + list.length + " レースの" +
-        (isResult ? "結果" : "出馬表") + "データです。\n" +
-        "各レースを比較し、最も“買い”に値する 1 レース・1 頭を、根拠とともに 1 つだけ選んでください。\n";
-      list.forEach((data, i) => {
-        out += "\n=== レース" + (i + 1) + "：" + raceLabel(data) + " ===\n";
+        "以下は複数レースの出馬表データです。各レースの 1 番人気（軸候補）を、次の消去法チェックリストで機械的に評価してください。\n" +
+        "・1 番人気か／確定単勝が 1.5〜2.0 倍か／途中から 30% 以上下落していないか／2 クラス以上の昇級戦でないか。\n" +
+        "1 つでも欠ければそのレースは「見送り」。**条件を満たすレースが 1 つも無ければ、正直に『本日は全て見送り』と答えてください（無理に 1 頭選ばない）。**\n\n" +
+        "出力形式：\n" +
+        "1) レースごとに ○/× のチェック結果を 1 行で\n" +
+        "2) 最後に『今日の 1 本：◯◯（レース名・馬名）』または『本日は見送り』を、理由 3 行で\n\n";
+      races.forEach((data, i) => {
+        const ri = data.raceInfo || {};
+        out += "\n=== レース" + (i + 1) + "：" + (ri.date ? ri.date + " " : "") + raceLabel(data) + " ===\n";
         out += formatMarkdown(data) + "\n";
       });
+      out +=
+        "\n※これは判断の補助であり、的中を保証するものではありません。地方競馬では 1 番人気でも約 4 割は勝ちません。\n";
       return out;
     }
     return list.map((d) => formatData(d, format)).join("\n\n---\n\n");
@@ -759,7 +782,9 @@
     if (btnCollect) {
       btnCollect.addEventListener("click", async () => {
         if (!extractedData) return;
-        if (!isPro) {
+        // Free は 2 レースまで"体験"できる。3 レース目でロック（価値を見せてからペイウォール）。
+        const cur = await loadCollection();
+        if (!isPro && cur.length >= 2) {
           track("pro_locked_click", { kind: "collection" });
           showUpgradeCard({ kind: "collection" });
           return;
@@ -774,6 +799,12 @@
       btnCollectionExport.addEventListener("click", async () => {
         const list = await loadCollection();
         if (!list.length) return;
+        // 一括出力は Pro 機能（裏口封鎖）。Free は収集の体験まで、出力でロック。
+        if (!isPro) {
+          track("pro_locked_click", { kind: "collection_export" });
+          showUpgradeCard({ kind: "collection" });
+          return;
+        }
         const out = buildCombined(list, currentFormat);
         try {
           await navigator.clipboard.writeText(out);
@@ -1208,7 +1239,14 @@
     raceDetail.textContent = details;
     horseCount.textContent = `${entry.horseCount} 頭`;
     raceSummary.classList.add("visible");
+    // 履歴には全頭データ(entry.data)があるので復元し、コピー・収集を可能にする
+    if (entry.data) {
+      extractedData = entry.data;
+      formattedOutput = formatData(entry.data, currentFormat);
+      showPreview(formattedOutput);
+    }
     btnCopy.classList.add("visible");
+    if (btnCollect) btnCollect.style.display = "block";
   }
 
   function setupHistoryUI() {
