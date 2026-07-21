@@ -79,6 +79,12 @@
   const btnExtract = document.getElementById("btnExtract");
   const btnCopy = document.getElementById("btnCopy");
   const btnDownloadCsv = document.getElementById("btnDownloadCsv");
+  const btnCollect = document.getElementById("btnCollect");
+  const collectionSection = document.getElementById("collectionSection");
+  const collectionList = document.getElementById("collectionList");
+  const collectionCount = document.getElementById("collectionCount");
+  const btnCollectionExport = document.getElementById("btnCollectionExport");
+  const btnCollectionClear = document.getElementById("btnCollectionClear");
   const previewSection = document.getElementById("previewSection");
   const previewBox = document.getElementById("previewBox");
   const previewMeta = document.getElementById("previewMeta");
@@ -267,6 +273,7 @@
     if (kind === "csv") title = "CSV 出力は Pro 機能です";
     else if (kind === "template") title = "「" + (context.label || "この") + "」プロンプトは Pro 機能です";
     else if (kind === "limit") title = "今月の無料枠（3 回）を使い切りました";
+    else if (kind === "collection") title = "複数レースの収集・一括出力は Pro 機能です";
     if (ucTitle) ucTitle.textContent = title;
     track("upgrade_card_shown", { context: kind });
     licenseFree.style.display = "none";
@@ -352,11 +359,13 @@
     setupExtractButton();
     setupCopyButton();
     setupDownloadCsvButton();
+    setupCollectionUI();
     setupHistoryUI();
     await loadLicense();
     await maybeRestorePurchaseFlow();
     await checkCurrentPage();
     await renderHistory();
+    renderCollection(await loadCollection());
   }
 
   // --- Check if current page is supported ---
@@ -566,6 +575,7 @@
     }
 
     btnCopy.classList.add("visible");
+    if (btnCollect) btnCollect.style.display = "block";
     saveHistory(data);
   }
 
@@ -634,6 +644,160 @@
         }
       );
     });
+  }
+
+  // ============================================
+  // Multi-race Collection (v1.4 / Pro)
+  //   ユーザーが開いた各レースを端末内(chrome.storage.local)に貯めて一括出力。
+  //   自動取得は一切しない＝「見ているページの DOM」のみが対象（privacy/規約の足場を維持）。
+  // ============================================
+  const COLLECTION_KEY = "collectedRaces";
+
+  function raceKey(data) {
+    const ri = (data && data.raceInfo) || {};
+    return [ri.date, ri.track, ri.raceNumber, ri.raceName].filter(Boolean).join("|");
+  }
+
+  function raceLabel(data) {
+    const ri = (data && data.raceInfo) || {};
+    const head = [ri.track, ri.raceNumber].filter(Boolean).join(" ");
+    return (head ? head + " " : "") + (ri.raceName || "レース");
+  }
+
+  async function loadCollection() {
+    try {
+      const r = await chrome.storage.local.get([COLLECTION_KEY]);
+      return Array.isArray(r[COLLECTION_KEY]) ? r[COLLECTION_KEY] : [];
+    } catch {
+      return [];
+    }
+  }
+
+  async function saveCollection(list) {
+    try {
+      await chrome.storage.local.set({ [COLLECTION_KEY]: list });
+    } catch (e) {}
+  }
+
+  function flashCollect(msg) {
+    if (!btnCollect) return;
+    const orig = btnCollect.innerHTML;
+    btnCollect.textContent = msg;
+    setTimeout(() => {
+      btnCollect.innerHTML = orig;
+    }, 1500);
+  }
+
+  async function addToCollection(data) {
+    const list = await loadCollection();
+    const key = raceKey(data);
+    if (list.some((d) => raceKey(d) === key)) {
+      flashCollect("このレースは収集済みです");
+      return;
+    }
+    list.push(data);
+    await saveCollection(list);
+    track("collect_add", { count: list.length });
+    flashCollect("追加しました（" + list.length + " レース）");
+    renderCollection(list);
+  }
+
+  async function clearCollection() {
+    await saveCollection([]);
+    renderCollection([]);
+  }
+
+  function renderCollection(list) {
+    if (!collectionSection) return;
+    if (!list || list.length === 0) {
+      collectionSection.style.display = "none";
+      return;
+    }
+    collectionSection.style.display = "block";
+    collectionCount.textContent = String(list.length);
+    collectionList.innerHTML = "";
+    list.forEach((data, i) => {
+      const row = document.createElement("div");
+      row.className = "collection-item";
+      const span = document.createElement("span");
+      span.className = "collection-item-name";
+      span.textContent = raceLabel(data);
+      const del = document.createElement("button");
+      del.className = "collection-item-del";
+      del.textContent = "×";
+      del.title = "削除";
+      del.addEventListener("click", async () => {
+        const cur = await loadCollection();
+        cur.splice(i, 1);
+        await saveCollection(cur);
+        renderCollection(cur);
+      });
+      row.appendChild(span);
+      row.appendChild(del);
+      collectionList.appendChild(row);
+    });
+  }
+
+  // 複数レースを 1 つの出力に結合。AI 形式は「全レース比較→今日の1本を選ぶ」プロンプトに。
+  function buildCombined(list, format) {
+    if (format === "ai") {
+      const isResult = !!(list[0] && list[0].raceInfo && list[0].raceInfo.isResult);
+      let out =
+        "以下は本日注目している " + list.length + " レースの" +
+        (isResult ? "結果" : "出馬表") + "データです。\n" +
+        "各レースを比較し、最も“買い”に値する 1 レース・1 頭を、根拠とともに 1 つだけ選んでください。\n";
+      list.forEach((data, i) => {
+        out += "\n=== レース" + (i + 1) + "：" + raceLabel(data) + " ===\n";
+        out += formatMarkdown(data) + "\n";
+      });
+      return out;
+    }
+    return list.map((d) => formatData(d, format)).join("\n\n---\n\n");
+  }
+
+  function setupCollectionUI() {
+    if (btnCollect) {
+      btnCollect.addEventListener("click", async () => {
+        if (!extractedData) return;
+        if (!isPro) {
+          track("pro_locked_click", { kind: "collection" });
+          showUpgradeCard({ kind: "collection" });
+          return;
+        }
+        await addToCollection(extractedData);
+      });
+    }
+    if (btnCollectionClear) {
+      btnCollectionClear.addEventListener("click", () => clearCollection());
+    }
+    if (btnCollectionExport) {
+      btnCollectionExport.addEventListener("click", async () => {
+        const list = await loadCollection();
+        if (!list.length) return;
+        const out = buildCombined(list, currentFormat);
+        try {
+          await navigator.clipboard.writeText(out);
+        } catch {
+          const ta = document.createElement("textarea");
+          ta.value = out;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+        }
+        track("collection_export", { count: list.length, format: currentFormat });
+        const orig = btnCollectionExport.textContent;
+        btnCollectionExport.textContent =
+          currentFormat === "ai"
+            ? "コピー完了！ ChatGPT/Claude に貼り付け"
+            : list.length + " レースをコピーしました！";
+        btnCollectionExport.classList.add("copied");
+        setTimeout(() => {
+          btnCollectionExport.textContent = orig;
+          btnCollectionExport.classList.remove("copied");
+        }, 2000);
+      });
+    }
   }
 
   // --- Preview ---

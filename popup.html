@@ -17,7 +17,7 @@
       <circle cx="14" cy="10" r="1.5" fill="#fff"/>
     </svg>
     <h1>Keiba Race Data Formatter</h1>
-    <span class="version">v1.3.3</span>
+    <span class="version">v1.4.0</span>
   </div>
 
   <!-- Main Content -->
@@ -88,6 +88,7 @@
     <div id="upgradeCard" class="upgrade-card" style="display:none;">
       <div class="uc-title" id="ucTitle">Pro プランのご案内</div>
       <div class="uc-benefits">
+        <div class="uc-benefit">複数レースを収集してまとめて出力（今日の1本を選ぶ）</div>
         <div class="uc-benefit">AI プロンプト無制限（無料は月 3 回）</div>
         <div class="uc-benefit">専用プロンプト 5 種：展開・穴馬・血統・馬場・次走</div>
         <div class="uc-benefit">CSV 出力（Excel・分析ツールへ）</div>
@@ -110,6 +111,17 @@
       <button id="btnExtract" class="btn-extract" disabled>データ抽出</button>
       <button id="btnCopy" class="btn-copy">クリップボードにコピー</button>
       <button id="btnDownloadCsv" class="btn-copy" style="display:none;">CSV ダウンロード</button>
+      <button id="btnCollect" class="btn-collect" style="display:none;">&#43; このレースを収集に追加 <span class="pro-badge">PRO</span></button>
+    </div>
+
+    <!-- Multi-race Collection (v1.4 / Pro) -->
+    <div id="collectionSection" class="collection-section" style="display:none;">
+      <div class="collection-header">
+        <span class="collection-label">&#128203; 今日の収集 <span id="collectionCount" class="collection-count">0</span></span>
+        <button id="btnCollectionClear" class="btn-clear-history">クリア</button>
+      </div>
+      <div id="collectionList" class="collection-list"></div>
+      <button id="btnCollectionExport" class="btn-collection-export">まとめて出力（コピー）</button>
     </div>
 
     <!-- Preview -->

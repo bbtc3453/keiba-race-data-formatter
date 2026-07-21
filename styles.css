@@ -754,3 +754,98 @@ body {
   margin-bottom: 8px;
   line-height: 1.5;
 }
+
+/* ============================================
+   Multi-race Collection (v1.4 / Pro)
+   ============================================ */
+.btn-collect {
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 8px;
+  border: 1px solid var(--pro-gold);
+  border-radius: var(--radius);
+  background: rgba(243, 156, 18, 0.1);
+  color: var(--pro-gold);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-collect:hover { background: rgba(243, 156, 18, 0.2); }
+.btn-collect .pro-badge {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--pro-gold);
+  color: #1a1a2e;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.collection-section {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--pro-gold);
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+}
+.collection-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.collection-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.collection-count {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--pro-gold);
+  color: #1a1a2e;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+.collection-list { margin-bottom: 10px; }
+.collection-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-primary);
+}
+.collection-item:last-child { border-bottom: none; }
+.collection-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.collection-item-del {
+  flex: none;
+  width: 20px; height: 20px;
+  margin-left: 8px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+}
+.collection-item-del:hover { color: var(--error); background: rgba(231, 76, 60, 0.1); }
+.btn-collection-export {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--pro-gold);
+  color: #1a1a2e;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-collection-export:hover { background: #e08e0b; }
+.btn-collection-export.copied { background: var(--success); color: #fff; }
