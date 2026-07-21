@@ -17,7 +17,7 @@
       <circle cx="14" cy="10" r="1.5" fill="#fff"/>
     </svg>
     <h1>Keiba Race Data Formatter</h1>
-    <span class="version">v1.3.2</span>
+    <span class="version">v1.3.3</span>
   </div>
 
   <!-- Main Content -->
@@ -81,6 +81,27 @@
         </div>
         <div id="licenseError" class="license-error" style="display:none;"></div>
         <a href="#" id="btnBuyLink" class="buy-link">ライセンスキーを購入 &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Upgrade Card (Pro ペイウォール) -->
+    <div id="upgradeCard" class="upgrade-card" style="display:none;">
+      <div class="uc-title" id="ucTitle">Pro プランのご案内</div>
+      <div class="uc-benefits">
+        <div class="uc-benefit">AI プロンプト無制限（無料は月 3 回）</div>
+        <div class="uc-benefit">専用プロンプト 5 種：展開・穴馬・血統・馬場・次走</div>
+        <div class="uc-benefit">CSV 出力（Excel・分析ツールへ）</div>
+        <div class="uc-benefit">拡張データ：調教師・馬体重・血統・前走成績</div>
+      </div>
+      <div class="uc-price">
+        <div class="uc-price-main">$9.99 <span class="uc-price-yen">（約 1,500 円）買い切り</span></div>
+        <div class="uc-price-sub">月額なし・今後のアップデートも無料。競馬新聞 3 部分の値段で、ずっと使えます。</div>
+      </div>
+      <button id="btnUpgradeBuy" class="uc-buy">Pro を購入する &rarr;</button>
+      <div class="uc-trust">決済は Payhip（海外の決済代行）。カード情報が拡張に渡ることはありません。</div>
+      <div class="uc-links">
+        <a href="#" id="btnHaveKey" class="uc-havekey">購入済みの方：キーを入力</a>
+        <a href="#" id="btnUpgradeClose" class="uc-close">閉じる</a>
       </div>
     </div>
 

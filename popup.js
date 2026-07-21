@@ -98,6 +98,13 @@
   const btnDeactivate = document.getElementById("btnDeactivate");
   const btnBuyLink = document.getElementById("btnBuyLink");
 
+  // Upgrade card (Pro ペイウォール・v1.3.3)
+  const upgradeCard = document.getElementById("upgradeCard");
+  const ucTitle = document.getElementById("ucTitle");
+  const btnUpgradeBuy = document.getElementById("btnUpgradeBuy");
+  const btnHaveKey = document.getElementById("btnHaveKey");
+  const btnUpgradeClose = document.getElementById("btnUpgradeClose");
+
   // History DOM
   const historySection = document.getElementById("historySection");
   const historyList = document.getElementById("historyList");
@@ -153,6 +160,25 @@
     }
   }
 
+  // 購入後、popup が閉じて再度開いた購入者にキー入力を復元（fable5 レビュー(a)）
+  async function maybeRestorePurchaseFlow() {
+    try {
+      const { purchaseClickedAt } = await chrome.storage.local.get(["purchaseClickedAt"]);
+      if (!isPro && purchaseClickedAt &&
+          Date.now() - Date.parse(purchaseClickedAt) < 48 * 3600 * 1000) {
+        licenseFree.style.display = "none";
+        licenseForm.style.display = "block";
+        if (!document.getElementById("purchaseHint")) {
+          const hint = document.createElement("div");
+          hint.id = "purchaseHint";
+          hint.className = "purchase-hint";
+          hint.textContent = "ご購入ありがとうございます。メールに届いたライセンスキーを貼り付けてください。";
+          licenseForm.insertBefore(hint, licenseForm.firstChild);
+        }
+      }
+    } catch (e) {}
+  }
+
   async function activateLicense(key) {
     const trimmedKey = key.trim();
     if (!trimmedKey) {
@@ -173,6 +199,7 @@
         isPro: true,
         activatedAt: new Date().toISOString(),
       });
+      try { await chrome.storage.local.remove("purchaseClickedAt"); } catch (e) {}
       updateProUI();
       hideLicenseError();
     } else {
@@ -205,6 +232,7 @@
     licenseFree.style.display = "none";
     licensePro.style.display = "flex";
     licenseForm.style.display = "none";
+    if (upgradeCard) upgradeCard.style.display = "none";
 
     // Unlock pro format buttons
     document.querySelectorAll(".format-btn.pro-only").forEach((btn) => {
@@ -216,6 +244,7 @@
     licenseFree.style.display = "flex";
     licensePro.style.display = "none";
     licenseForm.style.display = "none";
+    if (upgradeCard) upgradeCard.style.display = "none";
 
     // Lock pro format buttons
     document.querySelectorAll(".format-btn.pro-only").forEach((btn) => {
@@ -232,6 +261,25 @@
     licenseError.style.display = "none";
   }
 
+  function showUpgradeCard(context) {
+    const kind = context && context.kind ? context.kind : "general";
+    let title = "Pro プランのご案内";
+    if (kind === "csv") title = "CSV 出力は Pro 機能です";
+    else if (kind === "template") title = "「" + (context.label || "この") + "」プロンプトは Pro 機能です";
+    else if (kind === "limit") title = "今月の無料枠（3 回）を使い切りました";
+    if (ucTitle) ucTitle.textContent = title;
+    track("upgrade_card_shown", { context: kind });
+    licenseFree.style.display = "none";
+    licenseForm.style.display = "none";
+    if (licensePro) licensePro.style.display = "none";
+    upgradeCard.style.display = "block";
+  }
+
+  function hideUpgradeCard() {
+    upgradeCard.style.display = "none";
+    if (!isPro) licenseFree.style.display = "flex";
+  }
+
   function setupLicenseUI() {
     btnBuyLink.addEventListener("click", (e) => {
       e.preventDefault();
@@ -241,9 +289,31 @@
 
     btnShowLicense.addEventListener("click", () => {
       track("upgrade_click");
-      licenseFree.style.display = "none";
+      showUpgradeCard({ kind: "general" });
+    });
+
+    btnUpgradeBuy.addEventListener("click", () => {
+      track("store_url_click", { from: "upgrade_card" });
+      // DOM 更新を先に（chrome 呼び出しが失敗しても購入手順へ確実に遷移）
+      upgradeCard.style.display = "none";
+      licenseForm.style.display = "block";
+      // 購入後の迷子防止 + Payhip を開く（guard）
+      try {
+        chrome.storage.local.set({ purchaseClickedAt: new Date().toISOString() }).catch(() => {});
+        chrome.tabs.create({ url: STORE_URL });
+      } catch (e) {}
+    });
+
+    btnHaveKey.addEventListener("click", (e) => {
+      e.preventDefault();
+      upgradeCard.style.display = "none";
       licenseForm.style.display = "block";
       licenseKeyInput.focus();
+    });
+
+    btnUpgradeClose.addEventListener("click", (e) => {
+      e.preventDefault();
+      hideUpgradeCard();
     });
 
     btnCancelLicense.addEventListener("click", () => {
@@ -251,6 +321,9 @@
       licenseFree.style.display = "flex";
       licenseKeyInput.value = "";
       hideLicenseError();
+      const h = document.getElementById("purchaseHint");
+      if (h) h.remove();
+      try { chrome.storage.local.remove("purchaseClickedAt").catch(() => {}); } catch (e) {}
     });
 
     btnActivate.addEventListener("click", () => {
@@ -281,6 +354,7 @@
     setupDownloadCsvButton();
     setupHistoryUI();
     await loadLicense();
+    await maybeRestorePurchaseFlow();
     await checkCurrentPage();
     await renderHistory();
   }
@@ -344,10 +418,7 @@
         // Pro-only format check
         if (btn.classList.contains("pro-only") && !isPro) {
           track("pro_locked_click", { kind: "format", format });
-          // Show license form
-          licenseFree.style.display = "none";
-          licenseForm.style.display = "block";
-          licenseKeyInput.focus();
+          showUpgradeCard({ kind: "csv" });
           return;
         }
 
@@ -405,9 +476,7 @@
         // Pro-only check
         if (!tpl.free && !isPro) {
           track("pro_template_locked_click", { template: key });
-          licenseFree.style.display = "none";
-          licenseForm.style.display = "block";
-          licenseKeyInput.focus();
+          showUpgradeCard({ kind: "template", label: tpl.label });
           return;
         }
         track("ai_template_select", { template: key, pro: isPro });
@@ -1041,7 +1110,7 @@
       if (link) {
         link.addEventListener("click", (e) => {
           e.preventDefault();
-          chrome.tabs.create({ url: STORE_URL });
+          showUpgradeCard({ kind: "limit" });
         });
       }
     } else {
@@ -1052,6 +1121,7 @@
 
   function showAiLimitReached(count) {
     updateAiUsageDisplay(count);
+    showUpgradeCard({ kind: "limit" });
   }
 
   // --- Start ---
