@@ -422,6 +422,7 @@
           return;
         }
 
+        hideUpgradeCard();
         formatBtns.forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
         currentFormat = format;
@@ -479,6 +480,7 @@
           showUpgradeCard({ kind: "template", label: tpl.label });
           return;
         }
+        hideUpgradeCard();
         track("ai_template_select", { template: key, pro: isPro });
 
         // Free 版 月次使用回数制限チェック
