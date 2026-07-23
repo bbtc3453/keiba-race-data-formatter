@@ -148,6 +148,11 @@
       surface: "",
       condition: "",
       raceClass: "",
+      postTime: "",
+      direction: "",
+      meeting: "",
+      headCount: "",
+      prize: "",
     };
 
     // Race name
@@ -174,6 +179,18 @@
       if (distMatch) {
         info.surface = distMatch[1] === "ダ" ? "ダート" : distMatch[1];
         info.distance = distMatch[2] + "m";
+      }
+
+      // 発走時刻（「20:00 発走」）— 「今日の1本」を選ぶのに必須
+      const postMatch = text.match(/(\d{1,2}:\d{2})\s*発走/);
+      if (postMatch) {
+        info.postTime = postMatch[1];
+      }
+
+      // 回り（「(右)」「(左 A)」「(直線)」）— コース適性の判断材料
+      const dirMatch = text.match(/[（(]\s*(右|左|直線?|障害)/);
+      if (dirMatch) {
+        info.direction = dirMatch[1];
       }
 
       // Weather
@@ -206,6 +223,24 @@
       const dateMatch = text.match(/(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日/);
       if (dateMatch) {
         info.date = `${dateMatch[1]}/${dateMatch[2]}/${dateMatch[3]}`;
+      }
+
+      // 開催（「8 回 門別 3 日目」）— 開催日次は馬場傾向の判断材料
+      const meetMatch = text.match(/(\d+)\s*回\s*\S+?\s*(\d+)\s*日目/);
+      if (meetMatch) {
+        info.meeting = `${meetMatch[1]}回${meetMatch[2]}日目`;
+      }
+
+      // 頭数（「7 頭」）— 少頭数と多頭数では別competition
+      const headMatch = text.match(/(\d+)\s*頭/);
+      if (headMatch) {
+        info.headCount = headMatch[1] + "頭";
+      }
+
+      // 本賞金（「本賞金:65.0、18.2、…万円」）— レースの格・賞金水準
+      const prizeMatch = text.match(/本賞金\s*[:：]\s*([\d.,、\s]+?)\s*万円/);
+      if (prizeMatch) {
+        info.prize = prizeMatch[1].replace(/\s+/g, "") + "万円";
       }
 
       // Class

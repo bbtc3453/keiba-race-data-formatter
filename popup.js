@@ -855,7 +855,7 @@
       forResult: false,
       free: true,
       prompt: (ri) =>
-        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）の出馬表データです。\n` +
+        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.postTime ? ri.postTime + "発走 " : ""}${ri.track || ""} ${ri.surface || ""}${ri.distance || ""}${ri.direction ? "(" + ri.direction + ")" : ""} ${ri.headCount || ""}）の出馬表データです。\n` +
         `このデータを分析し、以下の観点から予想してください：\n` +
         `1. 各馬の能力評価（前走成績・クラス実績から）\n` +
         `2. 展開予想（脚質・枠順から）\n` +
@@ -868,7 +868,7 @@
       forResult: false,
       free: false,
       prompt: (ri) =>
-        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）の出馬表データです。\n` +
+        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.postTime ? ri.postTime + "発走 " : ""}${ri.track || ""} ${ri.surface || ""}${ri.distance || ""}${ri.direction ? "(" + ri.direction + ")" : ""} ${ri.headCount || ""}）の出馬表データです。\n` +
         `このツールの思想は「買う馬を探す」のではなく「買わない理由を探す」。\n` +
         `下のチェックリストで 1 番人気（軸候補）を機械的に評価し、最後に結論を 1 つ出してください。\n` +
         `※必勝法ではありません。規律で危ない馬券を見送るためのフィルターです。\n\n` +
@@ -895,7 +895,7 @@
       forResult: false,
       free: false,
       prompt: (ri) =>
-        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）の出馬表データです。\n` +
+        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.postTime ? ri.postTime + "発走 " : ""}${ri.track || ""} ${ri.surface || ""}${ri.distance || ""}${ri.direction ? "(" + ri.direction + ")" : ""} ${ri.headCount || ""}）の出馬表データです。\n` +
         `展開予想に特化して分析してください：\n` +
         `1. 各馬の脚質（逃げ・先行・差し・追込）を分類\n` +
         `2. テンの速い馬（逃げ・先行馬）を特定し、ペースを予測（ハイペース/ミドル/スロー）\n` +
@@ -908,7 +908,7 @@
       forResult: false,
       free: false,
       prompt: (ri) =>
-        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）の出馬表データです。\n` +
+        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.postTime ? ri.postTime + "発走 " : ""}${ri.track || ""} ${ri.surface || ""}${ri.distance || ""}${ri.direction ? "(" + ri.direction + ")" : ""} ${ri.headCount || ""}）の出馬表データです。\n` +
         `穴馬発掘に特化して分析してください：\n` +
         `1. 単勝オッズ 10 倍以上の馬の中から、実力とオッズに乖離がある馬を特定\n` +
         `2. 人気薄でも好走できる根拠（コース適性、距離実績、騎手力、斤量恩恵など）を具体的に示す\n` +
@@ -920,7 +920,7 @@
       forResult: false,
       free: false,
       prompt: (ri) =>
-        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）の出馬表データです。\n` +
+        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.postTime ? ri.postTime + "発走 " : ""}${ri.track || ""} ${ri.surface || ""}${ri.distance || ""}${ri.direction ? "(" + ri.direction + ")" : ""} ${ri.headCount || ""}）の出馬表データです。\n` +
         `血統分析に特化して予想してください：\n` +
         `1. 各馬の父・母父から距離適性を評価（短距離型/中距離型/長距離型）\n` +
         `2. 馬場適性を血統から推定（芝向き/ダート向き、重馬場適性）\n` +
@@ -933,7 +933,7 @@
       forResult: false,
       free: false,
       prompt: (ri) =>
-        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）の出馬表データです。\n` +
+        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.postTime ? ri.postTime + "発走 " : ""}${ri.track || ""} ${ri.surface || ""}${ri.distance || ""}${ri.direction ? "(" + ri.direction + ")" : ""} ${ri.headCount || ""}）の出馬表データです。\n` +
         `馬場バイアスを考慮して分析してください：\n` +
         `1. ${ri.track || ""}${ri.surface || ""}${ri.distance || ""}のコース形態（直線の長さ、コーナー数、坂の有無）\n` +
         `2. 想定される馬場バイアス（内有利/外有利、前有利/差し有利）\n` +
@@ -947,7 +947,7 @@
       forResult: true,
       free: true,
       prompt: (ri) =>
-        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）のレース結果データです。\n` +
+        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.postTime ? ri.postTime + "発走 " : ""}${ri.track || ""} ${ri.surface || ""}${ri.distance || ""}${ri.direction ? "(" + ri.direction + ")" : ""} ${ri.headCount || ""}）のレース結果データです。\n` +
         `このデータを分析し、以下の観点からレース回顧を行ってください：\n` +
         `1. 勝ち馬の評価（ペース、展開利、能力評価）\n` +
         `2. 各馬の次走への展望\n` +
@@ -959,7 +959,7 @@
       forResult: true,
       free: false,
       prompt: (ri) =>
-        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.track || ""} ${ri.distance || ""}）のレース結果データです。\n` +
+        `以下は${ri.raceName || "レース"}（${ri.date || ""} ${ri.postTime ? ri.postTime + "発走 " : ""}${ri.track || ""} ${ri.surface || ""}${ri.distance || ""}${ri.direction ? "(" + ri.direction + ")" : ""} ${ri.headCount || ""}）のレース結果データです。\n` +
         `次走で狙える馬の発掘に特化して分析してください：\n` +
         `1. 不利や展開負けで実力を出し切れなかった馬を特定（通過順と上がり 3F に注目）\n` +
         `2. 上がり 3F 上位なのに着順が悪い馬（差し届かず・出遅れなど）をリストアップ\n` +
@@ -993,10 +993,21 @@
 
     // Race header
     output += `## ${ri.raceName || "レース"}\n\n`;
-    const meta = [ri.date, ri.track, ri.distance, ri.surface, ri.condition, ri.raceClass]
+    // 発走時刻・頭数・回り・開催日次は予想の判断材料なので必ず入れる
+    const meta = [
+      ri.date,
+      ri.postTime ? `${ri.postTime} 発走` : "",
+      [ri.track, ri.meeting].filter(Boolean).join(" "),
+      ([ri.surface, ri.distance].filter(Boolean).join("") || "") +
+        (ri.direction ? `(${ri.direction})` : ""),
+      ri.condition ? `馬場:${ri.condition}` : "",
+      ri.raceClass,
+      ri.headCount,
+    ]
       .filter(Boolean)
       .join(" | ");
     if (meta) output += `**${meta}**\n\n`;
+    if (ri.prize) output += `本賞金: ${ri.prize}\n\n`;
 
     if (isResult) {
       // Free: 着順, 枠, 馬番, 馬名, 性齢, 斤量, 騎手, タイム, 単勝, 人気
@@ -1083,7 +1094,7 @@
     const isResult = !!ri.isResult;
     let output = "";
 
-    output += `# ${ri.raceName || "レース"},${ri.date || ""},${ri.track || ""},${ri.distance || ""},${ri.surface || ""},${ri.condition || ""},${ri.raceClass || ""}\n`;
+    output += `# ${ri.raceName || "レース"},${ri.date || ""},${ri.postTime || ""},${ri.track || ""},${ri.meeting || ""},${ri.distance || ""},${ri.surface || ""},${ri.direction || ""},${ri.condition || ""},${ri.raceClass || ""},${ri.headCount || ""}\n`;
 
     if (isResult) {
       const headers = ["着順", "枠番", "馬番", "馬名", "性齢", "斤量", "騎手", "タイム", "着差", "通過順", "上がり 3F", "単勝オッズ", "人気", "馬体重", "調教師"];
