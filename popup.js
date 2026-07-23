@@ -103,6 +103,7 @@
   const btnCancelLicense = document.getElementById("btnCancelLicense");
   const btnDeactivate = document.getElementById("btnDeactivate");
   const btnBuyLink = document.getElementById("btnBuyLink");
+  const btnEnterKey = document.getElementById("btnEnterKey");
 
   // Upgrade card (Pro ペイウォール・v1.3.3)
   const upgradeCard = document.getElementById("upgradeCard");
@@ -301,6 +302,19 @@
       track("upgrade_click");
       showUpgradeCard({ kind: "general" });
     });
+
+    // 購入済みユーザーが販売カードを経由せずキー入力へ直行できる導線。
+    // これが無いと「Pro を購入する」を押さないとキー欄が出ず、買った人が有効化に迷う。
+    if (btnEnterKey) {
+      btnEnterKey.addEventListener("click", () => {
+        track("enter_key_click");
+        hideUpgradeCard();
+        licenseFree.style.display = "none";
+        licenseForm.style.display = "block";
+        hideLicenseError();
+        licenseKeyInput.focus();
+      });
+    }
 
     btnUpgradeBuy.addEventListener("click", () => {
       track("store_url_click", { from: "upgrade_card" });

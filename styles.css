@@ -855,3 +855,15 @@ body {
   color: var(--text-secondary);
   text-align: center;
 }
+.btn-enter-key {
+  padding: 4px 10px;
+  margin-left: auto;
+  margin-right: 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+}
+.btn-enter-key:hover { color: var(--text-primary); border-color: var(--text-secondary); }
