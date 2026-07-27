@@ -1,10 +1,19 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "__MSG_extDescription__",
   "default_locale": "ja",
-  "permissions": ["activeTab", "clipboardWrite", "downloads", "scripting", "storage"],
+  "permissions": [
+    "activeTab",
+    "clipboardWrite",
+    "downloads",
+    "scripting",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -26,14 +35,18 @@
         "https://nar.netkeiba.com/race/shutuba.html*",
         "https://nar.netkeiba.com/race/result.html*"
       ],
-      "js": ["content-netkeiba.js"],
+      "js": [
+        "content-netkeiba.js"
+      ],
       "run_at": "document_idle"
     },
     {
       "matches": [
         "https://www.jra.go.jp/JRADB/*"
       ],
-      "js": ["content-jra.js"],
+      "js": [
+        "content-jra.js"
+      ],
       "run_at": "document_idle"
     }
   ]

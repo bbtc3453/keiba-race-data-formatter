@@ -69,6 +69,9 @@
   const statusBanner = document.getElementById("statusBanner");
   const statusText = document.getElementById("statusText");
   const pageInfo = document.getElementById("pageInfo");
+  const getStarted = document.getElementById("getStarted");
+  const btnOpenNar = document.getElementById("btnOpenNar");
+  const btnOpenJra = document.getElementById("btnOpenJra");
   const siteName = document.getElementById("siteName");
   const pageType = document.getElementById("pageType");
   const raceSummary = document.getElementById("raceSummary");
@@ -377,6 +380,7 @@
     setupCopyButton();
     setupDownloadCsvButton();
     setupCollectionUI();
+    setupGetStarted();
     setupHistoryUI();
     await loadLicense();
     await maybeRestorePurchaseFlow();
@@ -409,6 +413,7 @@
   }
 
   function setSupported(site, type) {
+    if (getStarted) getStarted.style.display = "none";
     statusBanner.className = "status-banner supported";
     statusText.textContent = "対応ページを検出しました";
 
@@ -421,11 +426,34 @@
   }
 
   function setUnsupported() {
+    // インストール直後のユーザーはストアのページでアイコンを押すため、ここが
+    // 「最初に見る画面」になる。行き止まりにせず、対応ページへの入口を出す
+    // （アンインストール率 29% への対策・2026/7/23）。
     statusBanner.className = "status-banner unsupported";
-    statusText.textContent = "このページには対応していません";
+    statusText.textContent = "出馬表のページで使えます";
     pageInfo.style.display = "none";
     formatSection.style.display = "none";
     btnExtract.disabled = true;
+    if (getStarted) getStarted.style.display = "block";
+    track("unsupported_page_shown");
+  }
+
+  const RACE_LIST_NAR = "https://nar.netkeiba.com/top/race_list.html";
+  const RACE_LIST_JRA = "https://race.netkeiba.com/top/race_list.html";
+
+  function setupGetStarted() {
+    if (btnOpenNar) {
+      btnOpenNar.addEventListener("click", () => {
+        track("open_race_list", { kind: "nar" });
+        try { chrome.tabs.create({ url: RACE_LIST_NAR }); } catch (e) {}
+      });
+    }
+    if (btnOpenJra) {
+      btnOpenJra.addEventListener("click", () => {
+        track("open_race_list", { kind: "jra" });
+        try { chrome.tabs.create({ url: RACE_LIST_JRA }); } catch (e) {}
+      });
+    }
   }
 
   function setLoading(msg) {
@@ -593,7 +621,26 @@
 
     btnCopy.classList.add("visible");
     if (btnCollect) btnCollect.style.display = "block";
+    showPendingDrawNotice(data);
     saveHistory(data);
+  }
+
+  // 枠順・出走馬が未確定の出馬表は、馬番・斤量・馬体重が空のまま出る。
+  // 説明が無いと「壊れている」と受け取られて削除される（アンインストール対策・v1.5）。
+  function showPendingDrawNotice(data) {
+    const old = document.getElementById("pendingDrawNotice");
+    if (old) old.remove();
+    const horses = (data && data.horses) || [];
+    if (!horses.length || (data.raceInfo && data.raceInfo.isResult)) return;
+    const noNumber = horses.filter((h) => !h.horseNumber).length;
+    if (noNumber < horses.length * 0.8) return; // 大半が未採番のときだけ
+    const el = document.createElement("div");
+    el.id = "pendingDrawNotice";
+    el.className = "pending-notice";
+    el.textContent =
+      "⚠️ このレースはまだ枠順・出走馬が確定していません。馬番・斤量・馬体重は確定後（前日〜当日）に取得できます。";
+    raceSummary.parentNode.insertBefore(el, raceSummary.nextSibling);
+    track("pending_draw_notice");
   }
 
   function showExtractError(msg) {

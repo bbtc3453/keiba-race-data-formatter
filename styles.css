@@ -867,3 +867,66 @@ body {
   cursor: pointer;
 }
 .btn-enter-key:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+
+/* ============================================
+   Get started（非対応ページを行き止まりにしない・v1.5）
+   ============================================ */
+.get-started {
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+}
+.gs-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+.gs-body {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.gs-body b { color: var(--text-primary); }
+.gs-actions { display: flex; flex-direction: column; gap: 8px; }
+.gs-btn {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.gs-btn:hover { background: var(--bg-primary); }
+.gs-btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.gs-btn-primary:hover { background: var(--accent-hover); }
+.gs-guide {
+  display: block;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-align: center;
+  text-decoration: none;
+}
+.gs-guide:hover { color: var(--accent); text-decoration: underline; }
+.pending-notice {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--warning);
+  border-radius: 4px;
+  background: rgba(243, 156, 18, 0.1);
+  color: var(--text-primary);
+  font-size: 11.5px;
+  line-height: 1.6;
+}

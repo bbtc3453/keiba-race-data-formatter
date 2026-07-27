@@ -35,6 +35,22 @@
       <span class="page-type" id="pageType"></span>
     </div>
 
+    <!-- Getting started（非対応ページ = インストール直後に必ず当たる画面を行き止まりにしない） -->
+    <div id="getStarted" class="get-started" style="display:none;">
+      <div class="gs-title">&#128072; まずは出馬表のページを開いてください</div>
+      <div class="gs-body">
+        この拡張は <b>netkeiba / JRA 公式のレースページ</b>で使います。<br>
+        下のボタンから今日のレース一覧を開いて、気になるレースを選んでください。
+      </div>
+      <div class="gs-actions">
+        <button id="btnOpenNar" class="gs-btn gs-btn-primary">今日の地方競馬を開く</button>
+        <button id="btnOpenJra" class="gs-btn">今日の中央競馬を開く</button>
+      </div>
+      <a href="https://note.com/love_love_keiba/n/n986f65109537" target="_blank" rel="noopener" class="gs-guide">
+        &#128214; 使い方をもう少し詳しく見る
+      </a>
+    </div>
+
     <!-- Race Summary -->
     <div id="raceSummary" class="race-summary">
       <div class="race-name" id="raceName"></div>
